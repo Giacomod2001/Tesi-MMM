@@ -1,13 +1,9 @@
-# Tesi magistrale — MMM Budget Allocator (caso Randstad Italia)
+# MMM Budget Allocator
 
-Marketing Mix Modeling per il recruiting digitale: pipeline analitica,
-ottimizzatore di budget e interfaccia operativa. Dati sintetici calibrati
-(vincoli di compliance — vedi tesi.md, Nota sui dati).
+Marketing Mix Modeling per il recruiting digitale: pipeline analitica, ottimizzatore di budget e interfaccia operativa Streamlit. Dati sintetici (caso di studio, tesi magistrale IULM).
 
 ## Struttura del repository
 
-- `tesi.md` — testo della tesi (Introduzione, Parte I-III)
-- `deck_mmm.pptx` — mini deck di sintesi del sistema
 - `mmm/` — pipeline Python
   - `config.py` — canali, parametri del processo generativo, controlli
   - `transforms.py` — adstock geometrico + saturazione di Hill
