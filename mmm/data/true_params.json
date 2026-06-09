@@ -1,0 +1,38 @@
+{
+  "channels": {
+    "google": {
+      "beta": 260.0,
+      "lam": 0.15,
+      "K": 18000,
+      "s": 1.4
+    },
+    "meta": {
+      "beta": 310.0,
+      "lam": 0.45,
+      "K": 30000,
+      "s": 1.1
+    },
+    "linkedin": {
+      "beta": 90.0,
+      "lam": 0.55,
+      "K": 16000,
+      "s": 1.3
+    },
+    "indeed": {
+      "beta": 170.0,
+      "lam": 0.2,
+      "K": 7000,
+      "s": 1.8
+    }
+  },
+  "baseline": {
+    "alpha": 850.0,
+    "trend_per_week": 0.6,
+    "seas_amp": 110.0,
+    "seas_amp2": 45.0
+  },
+  "control_coef": {
+    "richieste_clienti": 0.15,
+    "ricerche_lavoratori": 0.08
+  }
+}
