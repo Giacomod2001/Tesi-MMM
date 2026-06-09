@@ -492,4 +492,132 @@ Sul piano dell'ottimizzazione, il run di riferimento a parità di budget (31.958
 
 ### 5.4 La pianificazione multi-periodo e i vincoli manageriali
 
-L'ottimizzatore opera nativamente sulla scala settimanale, ma l'orizzonte decisionale del marketing manager è il piano annuale, articolato per trimestri o 
+L'ottimizzatore opera nativamente sulla scala settimanale, ma l'orizzonte decisionale del marketing manager è il piano annuale, articolato per trimestri o mesi. Il modulo di pianificazione multi-periodo colma questa distanza: il decisore specifica il budget complessivo del piano, la granularità di gestione (anno, quarter o mese) e i pesi relativi dei periodi — ad esempio, una maggiore dotazione per il quarto trimestre in previsione dei picchi logistici — e il sistema risolve un problema di ottimizzazione vincolata per ciascun periodo, restituendo il piano completo di allocazione per periodo e canale.
+
+I vincoli disponibili formalizzano i tre momenti di intervento manageriale del paradigma human-in-the-middle: la spesa minima per canale (per presidi strategici come l'employer branding su LinkedIn, indipendentemente dal ROI di breve periodo), la spesa massima (per tetti contrattuali o di rischio) e la variazione massima rispetto allo status quo (per evitare riallocazioni traumatiche che il modello, cieco alle dinamiche organizzative, potrebbe altrimenti suggerire). In un esperimento illustrativo con budget annuale di 1,7 milioni di euro distribuito sui quattro trimestri con pesi 0,8 / 1,0 / 0,9 / 1,3 e presidio minimo su LinkedIn, il sistema produce un piano che rispetta tutti i vincoli e stima circa 18.000 candidature attese sull'anno.
+
+### 5.5 L'interfaccia operativa
+
+L'ultimo anello della catena è l'interfaccia web (Streamlit), che rende la pipeline accessibile al decisore non tecnico e costituisce il prototipo della dashboard operativa prefigurata nella roadmap (Capitolo 7). L'interfaccia si articola in tre viste. La vista *Dati* consente di caricare il dataset principale e di importare le serie esterne — richieste clienti, ricerche dei lavoratori o qualunque altra serie di controllo — in qualsiasi formato supportato, con riscontro immediato delle serie riconosciute. La vista *Modello* esegue la stima, espone le diagnostiche (R², NRMSE, MAPE), i parametri per canale, i coefficienti dei controlli, la decomposizione settimanale dei contributi e le curve di risposta a regime. La vista *Allocator* implementa il ciclo decisionale: il manager imposta il budget annuale, sceglie la granularità di gestione, distribuisce i pesi tra i periodi, dichiara i vincoli per canale e ottiene il piano ottimale con il dettaglio per periodo e canale, esportabile in CSV.
+
+L'interfaccia chiude il cerchio del paradigma teorizzato: il modello calcola, il manager vincola e interpreta, e l'esito — esplicitamente etichettato come raccomandazione, non come decisione — torna nelle mani del decisore per la valutazione finale alla luce dei fattori che il modello non vede.
+
+### 5.6 Sintesi del capitolo
+
+Il capitolo ha restituito l'output tecnico della pipeline: un fit con R² di 0,968 e MAPE dell'1,9%, il recupero accurato dei coefficienti delle variabili di controllo, un curve recovery compreso tra il 6,7% e il 24,8% di errore medio nel range operativo, e una raccomandazione di riallocazione che equalizza i rendimenti marginali su tutti i canali. L'interpretazione di queste evidenze — e dei loro limiti — è oggetto della Parte III.
+
+---
+
+# PARTE III — LA VALUTAZIONE
+
+## Capitolo 6 — Discussione
+
+### 6.1 Dalla curva alla decisione
+
+Il primo livello di lettura dei risultati riguarda la direzione della riallocazione raccomandata. A parità di budget, il modello suggerisce di ridurre Google (−24,5%) e Indeed (−3,5%) per finanziare l'espansione di Meta (+11,0%) e LinkedIn (+43,9%). La logica economica della raccomandazione è leggibile direttamente nei ROAS marginali pre-ottimizzazione: al livello di spesa storico, l'ultimo euro investito rendeva 5,8 candidature per mille euro su Google e 6,6 su Indeed, contro 8,0 su Meta e 10,3 su LinkedIn. I primi due canali operavano nella zona piatta delle rispettive curve di saturazione; gli altri due nella zona ancora ripida. L'ottimizzatore non fa che pareggiare questi rendimenti, portandoli tutti a 7,1.
+
+L'esito merita una lettura alla luce della diagnosi formulata nella Sezione 2.4. I canali che il modello suggerisce di ridurre — il motore di ricerca e la job board — sono esattamente i canali lower-funnel che le euristiche di attribuzione last-click tendono a sovra-finanziare, perché raccolgono il clic finale di percorsi di conversione innescati altrove. I canali da espandere — i social media — sono quelli upper-funnel sistematicamente penalizzati dalla stessa euristica. Il risultato del banco di prova sintetico riproduce dunque, in forma controllata, il fenomeno che la letteratura documenta sui dati reali: il passaggio da una misurazione per ultimo clic a una misurazione incrementale ridistribuisce il merito — e quindi il budget — dai canali di raccolta della domanda ai canali di generazione della domanda.
+
+Va peraltro sottolineato ciò che la raccomandazione non dice. L'incremento atteso a parità di budget è dell'1,7%: un guadagno di efficienza reale ma non drammatico, coerente con uno scenario in cui l'allocazione storica non era gravemente distorta. Il valore del modello, in questo contesto, non risiede nel promettere guadagni eclatanti, ma nel sostituire una giustificazione quantitativa e ispezionabile a un'allocazione fondata su consuetudine e contrattazione interna — e nel rendere visibile il costo opportunità di ogni vincolo che il decisore sceglie di imporre.
+
+### 6.2 L'analisi di scenario
+
+Il secondo livello di lettura emerge dall'analisi di scenario condotta sulle curve stimate, facendo variare il budget complessivo rispetto al livello storico (31.958 EUR/settimana).
+
+Nello scenario di contrazione (−20%, 25.566 EUR/settimana), l'allocazione ottima produce 294 candidature settimanali contro le 288 del mix storico semplicemente scalato: il guadagno dell'ottimizzazione sale al 2,3%. Nello scenario di espansione (+20%, 38.349 EUR/settimana) le candidature attese salgono a 386 (+1,3% sul mix scalato), e nello scenario +50% a 433 (+0,9%). Si osservano due regolarità economicamente significative.
+
+La prima: il guadagno relativo dell'ottimizzazione cresce al ridursi del budget. Quando le risorse sono scarse, allocarle bene conta di più: con un budget ridotto, tutti i canali operano nella zona ripida delle curve, dove le differenze di pendenza tra canali sono massime e l'allocazione intelligente produce il vantaggio maggiore. In espansione, viceversa, i canali migliori si avvicinano progressivamente alla saturazione e le alternative tendono a equivalersi. La conseguenza manageriale è notevole: l'adozione di un sistema di ottimizzazione è tanto più preziosa quanto più il contesto è di austerità — esattamente il contesto in cui, nella prassi, gli strumenti analitici vengono percepiti come un lusso rinviabile.
+
+La seconda: la composizione ottima del portafoglio cambia con la scala. Nello scenario −20% l'allocazione ottima riduce drasticamente Google (5.807 EUR contro gli 11.228 storici) preservando relativamente LinkedIn e Meta; nello scenario +50% Google torna a essere il primo canale (16.689 EUR). I rendimenti marginali decrescenti implicano che non esista un «mix ottimo» universale espresso in percentuali fisse: la quota ottima di ciascun canale è funzione del livello di spesa complessivo. Le regole pratiche diffuse nel settore — allocazioni percentuali fisse per canale — sono dunque strutturalmente subottimali rispetto a una riallocazione adattiva.
+
+Il profilo dei ROAS marginali lungo la curva conferma e quantifica la diagnosi qualitativa formulata nella Sezione 3.3.2: Indeed esibisce il crollo più rapido (da 17,6 candidature per mille euro a metà della spesa storica a 1,2 al doppio della spesa storica), coerente con la natura di canale ad audience finita che satura rapidamente; Meta e Google degradano più dolcemente; LinkedIn mostra un profilo a campana (10,3 al livello storico, 7,9 a metà spesa), riflesso della slope elevata stimata per quel canale.
+
+### 6.3 Il confronto con la letteratura
+
+I risultati del banco di prova si prestano a un confronto con le aspettative formulate dalla letteratura metodologica esaminata nel Capitolo 1.
+
+In primo luogo, l'entità del guadagno di efficienza (1-2% a parità di budget) è coerente con l'ordine di grandezza che gli studi applicativi riportano per riallocazioni vincolate in contesti con allocazioni di partenza ragionevoli; guadagni a doppia cifra emergono in letteratura solo in presenza di distorsioni allocative severe o di vincoli di partenza molto lontani dall'ottimo. In secondo luogo, la gerarchia delle curve di saturazione stimate — job board rapida a saturare, social graduali — riproduce il pattern atteso dalla distinzione tra audience attiva finita e audience latente ampia, fornendo una prima evidenza, sia pure su dati sintetici, che la struttura del modello è in grado di rappresentare le specificità del recruiting. In terzo luogo, l'esperienza dell'identificabilità debole di β e K conferma empiricamente l'argomento centrale di Chan e Perry (2017) e Jin et al. (2017) a favore dei prior informativi: con 100-200 osservazioni settimanali e canali che non esplorano la zona di saturazione, la verosimiglianza da sola non basta a separare i parametri strutturali, e la conoscenza di dominio — sotto forma di prior o, come qui, di bound — è una componente necessaria, non un'opzione.
+
+Quanto al passaggio da decisioni intuitive a decisioni data-driven, l'esperimento suggerisce una conclusione sfumata. Il modello non sostituisce le intuizioni del manager: le disciplina. Le intuizioni corrette (la job board satura presto; i social hanno margine) vengono confermate e quantificate; quelle scorrette (l'allocazione percentuale fissa) vengono falsificate con un controfattuale esplicito. La funzione del sistema è trasformare il disaccordo organizzativo da conflitto di opinioni a confronto su assunzioni ispezionabili — quali prior, quali vincoli, quale orizzonte.
+
+### 6.4 I limiti metodologici
+
+Tre limiti dell'implementazione corrente meritano menzione esplicita, in quanto delimitano la validità delle conclusioni e motivano la roadmap.
+
+Il primo è la natura puntuale delle stime: l'approccio frequentista adottato non produce distribuzioni di probabilità, e l'incertezza sulle curve di risposta — e dunque sulle raccomandazioni di allocazione — non è quantificata formalmente. La migrazione a PyMC-Marketing, resa agevole dall'identità strutturale del modello, è il passo successivo naturale.
+
+Il secondo è l'adstock geometrico: come discusso nella Sezione 3.2.2, i canali upper-funnel del recruiting esibiscono verosimilmente effetti ritardati che la parametrizzazione geometrica non cattura; l'estensione a funzioni di Weibull è prevista nella fase bayesiana.
+
+Il terzo è la natura sintetica dei dati: il banco di prova controllato dimostra che la pipeline funziona — recupera le curve che hanno generato i dati e converge all'allocazione ottima — ma non che il modello descriva correttamente il mercato reale. La validazione su dati aggregati reali, compatibilmente con le autorizzazioni aziendali, resta il banco di prova definitivo.
+
+### 6.5 Sintesi del capitolo
+
+Il capitolo ha interpretato l'output tecnico della pipeline alla luce degli obiettivi dell'indagine. La riallocazione raccomandata riproduce, in forma controllata, la correzione del last-touch bias documentata dalla letteratura: meno risorse ai canali di raccolta della domanda, più risorse ai canali che la generano. L'analisi di scenario ha mostrato che il valore dell'ottimizzazione cresce nei contesti di budget scarso e che il mix ottimo è funzione della scala di spesa — falsificando la prassi delle allocazioni percentuali fisse. Il confronto con la letteratura ha confermato la coerenza dell'ordine di grandezza dei guadagni e la necessità strutturale di conoscenza di dominio nella stima. I limiti dichiarati — stime puntuali, adstock geometrico, dati sintetici — delimitano il perimetro delle conclusioni e definiscono l'agenda del capitolo finale.
+
+## Capitolo 7 — Conclusioni e sviluppi futuri (bozza)
+
+*[Capitolo da sviluppare in fase di chiusura del lavoro. Traccia dei contenuti:]*
+
+### 7.1 Il contributo originale
+
+Bilancio rispetto ai tre obiettivi della Sezione 1.5: l'applicabilità del MMM al settore HR (prima applicazione documentata, verificata su banco di prova sintetico), la pipeline end-to-end riproducibile e trasferibile, e l'operazionalizzazione del paradigma human-in-the-middle nei tre momenti di intervento del decisore (specificazione, vincolo, interpretazione).
+
+### 7.2 L'evoluzione del paradigma human-in-the-middle
+
+Riflessione sulla metamorfosi del ruolo del decisore con la maturazione del sistema — da calibratore del modello, a gestore delle eccezioni, a supervisore di un feedback loop in cui decisioni ed esiti rientrano come dati. Discussione dei confini dell'automazione decisionale nel dominio HR.
+
+### 7.3 La roadmap
+
+Tre direttrici: validazione su dati reali aggregati (e calibrazione con esperimenti incrementali), migrazione bayesiana con PyMC-Marketing (prior elicitabili, intervalli di probabilità sulle raccomandazioni, adstock di Weibull), industrializzazione della dashboard operativa per il team.
+
+---
+
+# Riferimenti bibliografici
+
+BANSAL G., WU T., ZHOU J., FOK R., NUSHI B., KAMAR E., RIBEIRO M.T. e WELD D.S. (2021). Does the whole exceed its parts? The effect of AI explanations on complementary team performance. In: *Proceedings of the 2021 CHI Conference on Human Factors in Computing Systems*, Yokohama, maggio 2021. New York: ACM, pp. 1-16
+
+BASS F.M. (1969). A new product growth for model consumer durables. *Management Science*, 15(5), pp. 215-227
+
+BERMAN R. (2018). Beyond the last touch: Attribution in online advertising. *Marketing Science*, 37(5), pp. 771-792
+
+BROADBENT S. (1979). One way TV advertisements work. *Journal of the Market Research Society*, 21(3), pp. 139-166
+
+CHAN D. e PERRY M. (2017). *Challenges and opportunities in media mix modeling* [Online]. Google Research. Disponibile all'indirizzo: <https://research.google/pubs/pub45998/>. (Consultato il 10/06/2026)
+
+GOOGLE (2025). *Meridian: an open-source marketing mix model* [Online]. Disponibile all'indirizzo: <https://developers.google.com/meridian>. (Consultato il 10/06/2026)
+
+HOFFMAN M.D. e GELMAN A. (2014). The No-U-Turn Sampler: Adaptively setting path lengths in Hamiltonian Monte Carlo. *Journal of Machine Learning Research*, 15(1), pp. 1593-1623
+
+IAB EUROPE (2024). *AdEx Benchmark 2023 Report* [Online]. Bruxelles: IAB Europe. Disponibile all'indirizzo: <https://iabeurope.eu>. (Consultato il 10/06/2026)
+
+JIN Y., WANG Y., SUN Y., CHAN D. e KOEHLER J. (2017). *Bayesian methods for media mix modeling with carryover and shape effects* [Online]. Google Research. Disponibile all'indirizzo: <https://research.google/pubs/pub46001/>. (Consultato il 10/06/2026)
+
+KUMAR R., CARROLL C., HARTIKAINEN A. e MARTIN O. (2019). ArviZ: a unified library for exploratory analysis of Bayesian models in Python. *Journal of Open Source Software*, 4(33), 1143
+
+LAI V., CHEN C., LIAO Q.V., SMITH-RENNER A. e TAN C. (2021). *Towards a science of human-AI decision making: A survey of empirical studies* [Online]. arXiv:2112.11471. Disponibile all'indirizzo: <https://arxiv.org/abs/2112.11471>. (Consultato il 10/06/2026)
+
+LI H. e KANNAN P.K. (2014). Attributing conversions in a multichannel online marketing environment: An empirical model and a field experiment. *Journal of Marketing Research*, 51(1), pp. 40-56
+
+LITTLE J.D.C. (1975). BRANDAID: A marketing-mix model, part 1: Structure. *Operations Research*, 23(4), pp. 628-655
+
+MAYER J.R. e MITCHELL J.C. (2012). Third-party web tracking: Policy and technology. In: *Proceedings of the 2012 IEEE Symposium on Security and Privacy*, San Francisco, maggio 2012. IEEE, pp. 413-427
+
+MOREY R.D., HOEKSTRA R., ROUDER J.N., LEE M.D. e WAGENMAKERS E.-J. (2016). The fallacy of placing confidence in confidence intervals. *Psychonomic Bulletin & Review*, 23(1), pp. 103-123
+
+PYMC LABS (2023). *PyMC-Marketing: Bayesian marketing analytics* [Online]. Disponibile all'indirizzo: <https://www.pymc-marketing.io>. (Consultato il 10/06/2026)
+
+RUNGE J., SKOKAN I., ZHOU G. e PAUWELS K. (2024). *Packaging up media mix modeling: An introduction to Robyn's open-source approach* [Online]. Marketing Science Institute Working Paper Series, Report No. 24-147. Disponibile all'indirizzo: <https://arxiv.org/abs/2403.14674>. (Consultato il 10/06/2026)
+
+SALVATIER J., WIECKI T.V. e FONNESBECK C. (2016). Probabilistic programming in Python using PyMC3. *PeerJ Computer Science*, 2, e55
+
+SAPP S. e GALBRECHT A. (2023). *[Riferimento da completare: verificare titolo e sede di pubblicazione del contributo citato nel Capitolo 1]*
+
+TELLIS G.J. (2006). Modeling marketing mix. In: GROVER R. e VRIENS M. (a cura di), *The handbook of marketing research: Uses, misuses, and future advances*. Thousand Oaks: Sage, pp. 506-522
+
+**Fonti normative**
+
+D.Lgs. 10 settembre 2003, n. 276 (riforma Biagi) · D.Lgs. 15 giugno 2015, n. 81 (Jobs Act) · D.L. 12 luglio 2018, n. 87, conv. L. 9 agosto 2018, n. 96 (Decreto Dignità) · Regolamento UE 2016/679 (GDPR) · Regolamento UE 2022/1925 (Digital Markets Act) · California Consumer Privacy Act (2020) · Garante per la Protezione dei Dati Personali, *Linee guida cookie e altri strumenti di tracciamento*, giugno 2021
+
+**Risorse e dataset di settore**
+
+Flurry Analytics (2022), dati di opt-in ATT · Usercentrics (2023), benchmark europei sui tassi di consenso · PageFair (2023), *Adblock Report* · Meta Ad Library, Google Ads Transparency Center, LinkedIn Ad Library (librerie inserzioni pubbliche, consultate nel 2026)
