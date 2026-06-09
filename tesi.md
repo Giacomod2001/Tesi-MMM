@@ -1,5 +1,31 @@
 # Dati, modelli e decisioni: Marketing Mix Modeling a supporto del budget digitale nel recruiting — il caso Randstad Italia
 
+*Nota redazionale: il presente file segue la struttura IULM per le tesi di laurea magistrale (Frontespizio a cura del Centro Stampa → Indice → Introduzione → Capitoli → Conclusioni → Riferimenti bibliografici). In fase di export in Word applicare: margini 2,5 cm sup/inf e 3 cm dx/sx, testo giustificato, rientro prima riga 0,5 cm, interlinea 1,5, font serif unico 11-12 pt, sezioni che iniziano su pagina dispari, numerazione dall'Introduzione. Citazioni nel testo in stile APA autore-anno.*
+
+## Indice
+
+**Introduzione**
+
+**PARTE I — IL PROBLEMA**
+
+1. **Stato dell'arte** — 1.1 La crisi dell'attribuzione deterministica · 1.2 Il Marketing Mix Modeling: genesi e rinascita · 1.3 Il panorama dei framework open-source · 1.4 Frequentismo e bayesianesimo nel MMM · 1.5 Finalità dell'indagine · 1.6 Le lacune bibliografiche · 1.7 Sintesi
+2. **Il contesto** — 2.1 Le specificità del marketing nel settore HR · 2.2 Il mercato del lavoro italiano e la somministrazione · 2.3 Il caso Randstad Italia e l'architettura media · 2.4 Le criticità operative: il limite del last-click
+
+**PARTE II — LA SOLUZIONE**
+
+3. **I pilastri teorici del Marketing Mix Modeling** — 3.1 L'equazione generale · 3.2 La trasformazione adstock · 3.3 La funzione di saturazione · 3.4 La decomposizione dei contributi · 3.5 L'ottimizzatore di budget · 3.6 Il paradigma human-in-the-middle · 3.7 Sintesi
+4. **Design del sistema** — 4.1 L'architettura della pipeline · 4.2 Il dataset sintetico · 4.3 Le variabili di controllo · 4.4 L'ingestione automatica di serie esterne · 4.5 La specificazione e la stima · 4.6 Identificabilità e bound informativi · 4.7 Sintesi
+5. **Implementazione e risultati** — 5.1 L'esecuzione della pipeline · 5.2 Metriche di accuratezza e recupero dei parametri · 5.3 L'output dell'ottimizzatore · 5.4 La pianificazione multi-periodo · 5.5 L'interfaccia operativa · 5.6 Sintesi
+
+**PARTE III — LA VALUTAZIONE**
+
+6. **Discussione** — 6.1 Dalla curva alla decisione · 6.2 L'analisi di scenario · 6.3 Il confronto con la letteratura · 6.4 I limiti metodologici · 6.5 Sintesi
+7. **Conclusioni e sviluppi futuri** — 7.1 Il contributo originale · 7.2 L'evoluzione del paradigma human-in-the-middle · 7.3 La roadmap
+
+**Riferimenti bibliografici**
+
+---
+
 ## Introduzione
 
 Ogni anno le imprese europee investono miliardi di euro in pubblicità digitale per presidiare mercati sempre più frammentati. Secondo i dati dell'Interactive Advertising Bureau (IAB Europe, 2024), la spesa in digital advertising nell'area UE ha superato i 96 miliardi di euro nel 2023, confermando un tasso di crescita annuo composto prossimo all'11% nell'ultimo quinquennio. In parallelo, il settore delle agenzie per il lavoro destina al canale digitale una quota crescente del proprio budget promozionale, nella convinzione — spesso non suffragata da evidenze — che la visibilità online si traduca linearmente in candidature qualificate e, in ultima analisi, in ricavi.
@@ -228,7 +254,19 @@ La seconda specificità riguarda la natura del prodotto scambiato. Non si tratta
 
 La terza specificità è la ciclicità macroeconomica. L'investimento pubblicitario per la ricerca di candidati è strettamente correlato ai picchi di produzione delle aziende clienti — si pensi alla logistica durante il periodo natalizio o all'agricoltura e al turismo nei mesi estivi. Il modello econometrico deve pertanto essere in grado di depurare l'effetto incrementale della pubblicità dalle variazioni di baseline generate dal ciclo economico.
 
-### 2.2 Il caso Randstad Italia e l'architettura media
+### 2.2 Il mercato del lavoro italiano e la somministrazione
+
+Per comprendere la domanda che il marketing del recruiting è chiamato a intercettare, è necessario inquadrare brevemente il mercato nel quale le agenzie per il lavoro operano. In Italia, la somministrazione di lavoro è disciplinata dal D.Lgs. 276/2003 (la cosiddetta riforma Biagi), che ha istituito l'albo informatico delle agenzie per il lavoro presso il Ministero del Lavoro e ha definito i requisiti giuridici e finanziari per l'esercizio dell'attività. Il quadro è stato successivamente rimodellato dal D.Lgs. 81/2015 nell'ambito del Jobs Act e, in senso restrittivo, dal cosiddetto Decreto Dignità (D.L. 87/2018, convertito in L. 96/2018), che ha reintrodotto le causali per i contratti a termine di durata superiore ai dodici mesi e ne ha ridotto la durata massima — un intervento normativo con effetti diretti sui volumi e sulla composizione della domanda di lavoro somministrato.
+
+Tre caratteristiche strutturali di questo mercato sono rilevanti per la modellazione econometrica sviluppata nei capitoli successivi.
+
+La prima è la pro-ciclicità amplificata. Il lavoro somministrato funge da ammortizzatore di flessibilità per le imprese: nelle fasi espansive la domanda di somministrazione cresce più che proporzionalmente rispetto all'occupazione complessiva, poiché le aziende preferiscono forme flessibili in attesa di consolidare le aspettative; nelle fasi recessive si contrae con altrettanta rapidità, essendo la prima voce di costo del lavoro ad essere ridotta. Ne consegue che la serie storica delle candidature e degli avviamenti è strutturalmente più volatile del ciclo economico sottostante — una caratteristica che rafforza la necessità, argomentata nel Capitolo 3, di variabili di controllo macroeconomiche nel modello.
+
+La seconda è la stagionalità settoriale composita. La domanda di lavoro flessibile aggrega cicli stagionali eterogenei: il turismo e l'agroalimentare nei mesi estivi, la logistica e la grande distribuzione nel quarto trimestre (con il picco del periodo natalizio e degli eventi promozionali), il manifatturiero in corrispondenza dei cicli produttivi. La sovrapposizione di questi cicli produce un profilo stagionale complesso, che il modello cattura attraverso la combinazione di armoniche di Fourier multiple e della serie esplicita delle richieste dei clienti.
+
+La terza è l'asimmetria informativa tra i due lati del mercato. Nei periodi di espansione, la criticità per l'agenzia è la scarsità di candidati (talent shortage): la spesa pubblicitaria si concentra sull'attrazione di candidature, e il suo rendimento marginale è elevato. Nei periodi di contrazione, la criticità si sposta sul lato della domanda aziendale, e la stessa spesa pubblicitaria rivolta ai candidati produce candidature che l'agenzia fatica a collocare. Il valore economico di una candidatura incrementale non è dunque costante nel tempo — una considerazione che il modello, avendo come variabile obiettivo le candidature, non incorpora direttamente, ma che il decisore deve tenere presente in fase di interpretazione (un ulteriore argomento a favore del paradigma human-in-the-middle).
+
+### 2.3 Il caso Randstad Italia e l'architettura media
 
 Randstad Italia fa parte del gruppo multinazionale olandese Randstad N.V., leader mondiale nei servizi per le risorse umane. Sul territorio italiano, l'azienda si posiziona ai vertici del mercato per fatturato e capillarità della rete di filiali, offrendo servizi di somministrazione, ricerca e selezione, outplacement e formazione.
 
@@ -244,7 +282,7 @@ L'arsenale pubblicitario a disposizione di un inserzionista HR si articola sulle
 
 **D) Job Board e aggregatori (Indeed, Jooble, Subito Lavoro, AlmaLaurea).** Costituiscono il canale verticale, spesso operante in logica walled garden. L'investimento si concretizza in annunci sponsorizzati (PPC o Pay-Per-Application), per emergere nei risultati di ricerca organici del portale, e in Display Advertising e DEM, con l'acquisto di spazi premium o l'utilizzo dei database proprietari delle piattaforme per promuovere servizi e iniziative B2B.
 
-### 2.3 Le criticità operative: il limite del last-click
+### 2.4 Le criticità operative: il limite del last-click
 
 La gestione quotidiana di questo media mix frammentato pone il marketing manager di fronte a criticità operative severe, che rendono indispensabile il passaggio a un approccio di Marketing Mix Modeling.
 
@@ -454,38 +492,4 @@ Sul piano dell'ottimizzazione, il run di riferimento a parità di budget (31.958
 
 ### 5.4 La pianificazione multi-periodo e i vincoli manageriali
 
-L'ottimizzatore opera nativamente sulla scala settimanale, ma l'orizzonte decisionale del marketing manager è il piano annuale, articolato per trimestri o mesi. Il modulo di pianificazione multi-periodo colma questa distanza: il decisore specifica il budget complessivo del piano, la granularità di gestione (anno, quarter o mese) e i pesi relativi dei periodi — ad esempio, una maggiore dotazione per il quarto trimestre in previsione dei picchi logistici — e il sistema risolve un problema di ottimizzazione vincolata per ciascun periodo, restituendo il piano completo di allocazione per periodo e canale.
-
-I vincoli disponibili formalizzano i tre momenti di intervento manageriale del paradigma human-in-the-middle: la spesa minima per canale (per presidi strategici come l'employer branding su LinkedIn, indipendentemente dal ROI di breve periodo), la spesa massima (per tetti contrattuali o di rischio) e la variazione massima rispetto allo status quo (per evitare riallocazioni traumatiche che il modello, cieco alle dinamiche organizzative, potrebbe altrimenti suggerire). In un esperimento illustrativo con budget annuale di 1,7 milioni di euro distribuito sui quattro trimestri con pesi 0,8 / 1,0 / 0,9 / 1,3 e presidio minimo su LinkedIn, il sistema produce un piano che rispetta tutti i vincoli e stima circa 18.000 candidature attese sull'anno.
-
-### 5.5 L'interfaccia operativa
-
-L'ultimo anello della catena è l'interfaccia web (Streamlit), che rende la pipeline accessibile al decisore non tecnico e costituisce il prototipo della dashboard operativa prefigurata nella roadmap (Capitolo 7). L'interfaccia si articola in tre viste. La vista *Dati* consente di caricare il dataset principale e di importare le serie esterne — richieste clienti, ricerche dei lavoratori o qualunque altra serie di controllo — in qualsiasi formato supportato, con riscontro immediato delle serie riconosciute. La vista *Modello* esegue la stima, espone le diagnostiche (R², NRMSE, MAPE), i parametri per canale, i coefficienti dei controlli, la decomposizione settimanale dei contributi e le curve di risposta a regime. La vista *Allocator* implementa il ciclo decisionale: il manager imposta il budget annuale, sceglie la granularità di gestione, distribuisce i pesi tra i periodi, dichiara i vincoli per canale e ottiene il piano ottimale con il dettaglio per periodo e canale, esportabile in CSV.
-
-L'interfaccia chiude il cerchio del paradigma teorizzato: il modello calcola, il manager vincola e interpreta, e l'esito — esplicitamente etichettato come raccomandazione, non come decisione — torna nelle mani del decisore per la valutazione finale alla luce dei fattori che il modello non vede.
-
-### 5.6 Sintesi del capitolo
-
-Il capitolo ha restituito l'output tecnico della pipeline: un fit con R² di 0,968 e MAPE dell'1,9%, il recupero accurato dei coefficienti delle variabili di controllo, un curve recovery compreso tra il 6,7% e il 24,8% di errore medio nel range operativo, e una raccomandazione di riallocazione che equalizza i rendimenti marginali su tutti i canali. L'interpretazione di queste evidenze — e dei loro limiti — è oggetto della Parte III.
-
----
-
-# PARTE III — LA VALUTAZIONE
-
-## Capitolo 6 — Discussione (bozza)
-
-### 6.1 Limiti metodologici dell'implementazione corrente
-
-Tre limiti dell'implementazione corrente meritano menzione esplicita, in quanto delimitano la validità delle conclusioni e motivano la roadmap.
-
-Il primo è la natura puntuale delle stime: l'approccio frequentista adottato non produce distribuzioni di probabilità, e l'incertezza sulle curve di risposta — e dunque sulle raccomandazioni di allocazione — non è quantificata formalmente. La migrazione a PyMC-Marketing, resa agevole dall'identità strutturale del modello, è il passo successivo naturale.
-
-Il secondo è l'adstock geometrico: come discusso nella Sezione 3.2.2, i canali upper-funnel del recruiting esibiscono verosimilmente effetti ritardati che la parametrizzazione geometrica non cattura; l'estensione a funzioni di Weibull è prevista nella fase bayesiana.
-
-Il terzo è la natura sintetica dei dati: il banco di prova controllato dimostra che la pipeline funziona — recupera le curve che hanno generato i dati e converge all'allocazione ottima — ma non che il modello descriva correttamente il mercato reale. La validazione su dati aggregati reali, compatibilmente con le autorizzazioni aziendali, resta il banco di prova definitivo.
-
-### 6.2 Spunti interpretativi
-
-In attesa dell'analisi di scenario completa, due evidenze del run di riferimento meritano una prima lettura interpretativa. La prima riguarda la direzione della riallocazione raccomandata: il modello suggerisce di ridurre la spesa sul canale a risposta diretta dominante (Google) a favore dei canali con margine residuo sulle curve di saturazione — un esito coerente con la diagnosi del last-touch bias formulata nella Sezione 2.3, secondo cui le euristiche basate sull'ultimo clic conducono a un sistematico sovra-finanziamento dei canali lower-funnel. La seconda riguarda il problema dell'identificabilità di β e K emerso in fase di stima: lungi dall'essere un mero inconveniente numerico, esso costituisce la motivazione empirica più concreta — toccata con mano sul banco di prova controllato — per l'evoluzione bayesiana del sistema, nella quale i prior informativi svolgono in modo formalizzato e quantificato il ruolo che i bound svolgono qui in modo rigido.
-
-*[Sezione da completare: analisi di scenario, confronto con le aspettative della letteratura, discussione del passaggio da decisioni intuitive a decisioni data-driven.]*
+L'ottimizzatore opera nativamente sulla scala settimanale, ma l'orizzonte decisionale del marketing manager è il piano annuale, articolato per trimestri o 
