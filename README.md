@@ -27,4 +27,7 @@ python run_pipeline.py      # pipeline completa: dati -> fit -> allocazione
 pip install -r ../requirements-bayes.txt && python model_bayes.py   # fit bayesiano (10-20 min)
 python test_locale.py       # test di integrazione con i file di esempio
 streamlit run app.py        # interfaccia web
+
+# opzionale — fit bayesiano offline (10-20 min, richiede: pip install -r requirements-bayes.txt)
+python model_bayes.py       # produce output/bayes_*.json, letti automaticamente dall'app
 ```
