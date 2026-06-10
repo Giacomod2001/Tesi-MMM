@@ -206,12 +206,24 @@ with tab_alloc:
     n_per = allocator.PERIODS[gran]["n"]
     labels = allocator.PERIODS[gran]["label"]
     if n_per > 1:
-        st.markdown("**Quanto budget a ogni periodo?** (pesi relativi — es. metti 1,3 a Q4 "
-                    "se ti aspetti il picco natalizio della logistica)")
-        wdf = st.data_editor(pd.DataFrame({"periodo": labels, "peso": [1.0] * n_per}),
-                             hide_index=True, disabled=["periodo"],
-                             key=f"pesi_{gran}", use_container_width=True)
+        st.markdown("**Quanto budget a ogni periodo?**")
+        usa_suggeriti = st.toggle(
+            "Suggerisci i pesi dai dati", value=True,
+            help="Il sistema legge la stagionalita' della domanda nello storico "
+                 "(richieste dei clienti) e propone piu' budget nei periodi di picco. "
+                 "Puoi sempre correggere i valori a mano.")
+        pesi_default = (allocator.suggest_period_weights(df, gran)
+                        if usa_suggeriti else np.ones(n_per))
+        wdf = st.data_editor(
+            pd.DataFrame({"periodo": labels, "peso": pesi_default}),
+            hide_index=True, disabled=["periodo"],
+            key=f"pesi_{gran}_{usa_suggeriti}", use_container_width=True)
         pesi = wdf["peso"].to_numpy(float)
+        if usa_suggeriti:
+            picco = labels[int(np.argmax(pesi_default))]
+            st.caption(f"Pesi proposti dai picchi di domanda nello storico "
+                       f"(periodo piu' forte: **{picco}**). Modificali pure: "
+                       f"conosci cose che i dati non vedono.")
     else:
         pesi = None
 

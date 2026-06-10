@@ -215,3 +215,31 @@ def plan_periods(params, total_budget: float, granularity: str = "quarter",
         "granularita": granularity,
     }
     return plan
+
+
+def suggest_period_weights(df: pd.DataFrame, granularity: str,
+                           column: str | None = None) -> np.ndarray:
+    """Pesi di periodo suggeriti dai dati (stagionalita' della domanda).
+
+    Calcola la media per periodo dell'anno (quarter o mese) della serie di
+    domanda — di default le richieste dei clienti, altrimenti le candidature —
+    dopo aver rimosso il trend lineare, e la normalizza a media 1.
+    Il manager puo' sempre modificare i pesi proposti (human-in-the-middle).
+    """
+    spec = PERIODS[granularity]
+    if spec["n"] == 1:
+        return np.array([1.0])
+
+    if column is None:
+        column = next((c for c in ("richieste_clienti", "ctrl_richieste_clienti")
+                       if c in df.columns), "applications")
+    v = df[column].to_numpy(float)
+    t = np.arange(len(v), dtype=float)
+    v = v - np.polyval(np.polyfit(t, v, 1), t) + v.mean()  # detrend
+
+    week = pd.to_datetime(df["week"])
+    per = (week.dt.quarter - 1) if granularity == "quarter" else (week.dt.month - 1)
+    means = pd.Series(v).groupby(per.to_numpy()).mean()
+    w = means.reindex(range(spec["n"])).fillna(means.mean()).to_numpy()
+    w = np.clip(w / w.mean(), 0.4, 2.5)   # pesi entro un range ragionevole
+    return np.round(w, 2)
