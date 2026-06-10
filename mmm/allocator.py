@@ -155,7 +155,7 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 PERIODS = {
     "anno":    {"n": 1,  "weeks": 52.0,    "label": ["Anno"]},
-    "quarter": {"n": 4,  "weeks": 13.0,    "label": ["Q1", "Q2", "Q3", "Q4"]},
+    "quarter": {"n": 4,  "weeks": 13.0,    "label": ["Q1 (Gen-Mar)", "Q2 (Apr-Giu)", "Q3 (Lug-Set)", "Q4 (Ott-Dic)"]},
     "mese":    {"n": 12, "weeks": 52 / 12, "label": ["Gen", "Feb", "Mar", "Apr",
                                                      "Mag", "Giu", "Lug", "Ago",
                                                      "Set", "Ott", "Nov", "Dic"]},
