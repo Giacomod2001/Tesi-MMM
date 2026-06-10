@@ -1,7 +1,10 @@
 __pycache__/
 *.pyc
 .streamlit/
-mmm/output/
+mmm/output/*
+!mmm/output/bayes_summary.json
+!mmm/output/bayes_curves.json
+!mmm/output/bayes_alloc.json
 .DS_Store
 tesi.md
 deck_mmm.pptx

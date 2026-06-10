@@ -9,7 +9,8 @@ Marketing Mix Modeling per il recruiting digitale: pipeline analitica, ottimizza
   - `transforms.py` — adstock geometrico + saturazione di Hill
   - `data_generator.py` — dataset sintetico settimanale (156 settimane)
   - `ingestion.py` — import automatico di serie esterne (Excel/CSV/PDF/JSON)
-  - `model.py` — fit del modello (scipy, bound informativi)
+  - `model.py` — fit frequentista (scipy, bound informativi)
+  - `model_bayes.py` — fit bayesiano (PyMC, prior informativi; eseguire offline)
   - `allocator.py` — ottimizzazione vincolata + pianificazione anno/quarter/mese
   - `app.py` — interfaccia Streamlit
   - `run_pipeline.py` — esecuzione end-to-end riproducibile
@@ -23,6 +24,7 @@ Marketing Mix Modeling per il recruiting digitale: pipeline analitica, ottimizza
 pip install -r mmm/requirements.txt
 cd mmm
 python run_pipeline.py      # pipeline completa: dati -> fit -> allocazione
+pip install -r ../requirements-bayes.txt && python model_bayes.py   # fit bayesiano (10-20 min)
 python test_locale.py       # test di integrazione con i file di esempio
 streamlit run app.py        # interfaccia web
 ```
