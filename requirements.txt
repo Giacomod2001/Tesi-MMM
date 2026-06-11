@@ -11,3 +11,5 @@ streamlit
 openpyxl
 pdfplumber
 gunicorn
+pymc>=5
+arviz
