@@ -128,14 +128,21 @@ def run_fit(_):
                     ]), "")])
 def run_bayes(_):
     st = store.get()
-    from core.mmm_bayes import fit_bayes
-    anchor = st["fit"]["channels"] if st.get("fit") else None
-    res = fit_bayes(st["df"], st["channels"], anchor=anchor)
-    with open(store.BAYES_PATH, "w") as f:
-        json.dump(res, f)
-    return True, html.Span(
-        "Fatto: le curve ora mostrano anche la fascia di incertezza (90%).",
-        className="text-success")
+    try:
+        from core.mmm_bayes import fit_bayes
+    except ImportError:
+        return False, dbc.Alert("Libreria PyMC mancante. Se sei in locale, apri il terminale ed esegui: pip install -r requirements-bayes.txt", color="danger")
+    
+    try:
+        anchor = st["fit"]["channels"] if st.get("fit") else None
+        res = fit_bayes(st["df"], st["channels"], anchor=anchor)
+        with open(store.BAYES_PATH, "w") as f:
+            json.dump(res, f)
+        return True, html.Span(
+            "Fatto: le curve ora mostrano anche la fascia di incertezza (90%).",
+            className="text-success")
+    except Exception as e:
+        return False, dbc.Alert(f"Errore durante il calcolo Bayesiano: {e}", color="danger")
 
 
 @callback(Output("saturation-row", "children"), Output("fig-curves", "figure"),

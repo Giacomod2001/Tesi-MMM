@@ -200,7 +200,7 @@ def optimize(_, budget, rows):
             text=f"{v:+.0%}", yshift=14, showarrow=False,
             font=dict(color=theme.POSITIVE if v >= 0 else theme.NEGATIVE,
                       size=13))
-    fig.update_layout(barmode="group", yaxis_title="€/settimana")
+    fig.update_layout(barmode="group", yaxis_title="€/settimana", hovermode="closest")
 
     fig2 = go.Figure(go.Bar(
         x=table["canale"], y=table["roas_marg_ottimale_x1000"],
@@ -208,7 +208,7 @@ def optimize(_, budget, rows):
     fig2.add_hline(y=float(table["roas_marg_ottimale_x1000"].mean()),
                    line_dash="dot", line_color=theme.AXIS,
                    annotation_text="resa pareggiata tra i canali")
-    fig2.update_layout(yaxis_title="candidature ogni 1.000 € aggiuntivi")
+    fig2.update_layout(yaxis_title="candidature ogni 1.000 € aggiuntivi", hovermode="closest")
 
     detail = table[["canale", "spesa_corrente", "spesa_ottimale",
                     "variazione_pct", "candidature_ottimali"]].copy()
