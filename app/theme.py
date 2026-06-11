@@ -1,27 +1,26 @@
-"""Tema visivo Randstad condiviso per i grafici Plotly."""
+"""Tema visivo Randstad condiviso per i grafici Plotly (sfondo chiaro)."""
 import plotly.graph_objects as go
 
 # Palette serie dati: ordine fisso, stesso canale = stesso colore ovunque.
-# Nota: il blu brand #003580 è troppo scuro per una linea su sfondo navy,
-# quindi nei grafici il primo canale usa un blu più chiaro e leggibile.
-# I primi quattro (google/meta/linkedin/indeed) sono volutamente di famiglie
-# diverse: blu, ciano, verde, arancio — distinguibili a colpo d'occhio.
-COLORS = ["#5B9BFF", "#00BCD4", "#4CAF50", "#FF9800",
-          "#9C27B0", "#E91E63", "#FFD54F"]
-BG = "rgba(0,0,0,0)"
-GRID = "#2D3848"
-AXIS = "#8B95A5"
-FONT = "#E8ECF1"
+# Colori saturi e leggibili su sfondo chiaro, di famiglie diverse:
+# google rosso, meta blu, linkedin verde, indeed arancio.
+COLORS = ["#D32F2F", "#1976D2", "#2E7D32", "#F57C00",
+          "#7B1FA2", "#C2185B", "#00838F"]
+BG = "rgba(0,0,0,0)"          # eredita lo sfondo della card
+GRID = "#E3E1DA"             # griglia leggera su chiaro
+AXIS = "#5A6473"             # testo assi (muted, ma AA su chiaro)
+FONT = "#1A2332"             # testo principale (ink)
 FONT_FAMILY = "Tahoma, Geneva, Verdana, sans-serif"
 
-POSITIVE = "#28A745"
-WARNING = "#E8A317"
-NEGATIVE = "#DC3545"
+POSITIVE = "#1E7E34"
+WARNING = "#C77700"
+NEGATIVE = "#C62828"
 
 
 def dark(fig: go.Figure, height: int = 380) -> go.Figure:
+    """Applica il tema (nome storico) ai grafici: ora sfondo chiaro."""
     fig.update_layout(
-        template="plotly_dark", paper_bgcolor=BG, plot_bgcolor=BG,
+        template="plotly_white", paper_bgcolor=BG, plot_bgcolor=BG,
         font=dict(color=FONT, size=12, family=FONT_FAMILY), height=height,
         margin=dict(l=40, r=20, t=48, b=40), colorway=COLORS,
         legend=dict(orientation="h", y=1.12, x=0),

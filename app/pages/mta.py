@@ -22,10 +22,10 @@ dash.register_page(__name__, path="/mta",
 CAPTION = "text-secondary small mt-2 mb-0"
 
 TBL_STYLE = dict(
-    style_header={"backgroundColor": "#14202F", "color": "#E8ECF1",
-                  "border": "1px solid #2D3848"},
-    style_cell={"backgroundColor": "#1A2332", "color": "#E8ECF1",
-                "border": "1px solid #2D3848", "fontSize": 14,
+    style_header={"backgroundColor": "#EEF2F8", "color": "#1A2332",
+                  "border": "1px solid #E3E1DA", "fontWeight": "600"},
+    style_cell={"backgroundColor": "#FFFFFF", "color": "#1A2332",
+                "border": "1px solid #E3E1DA", "fontSize": 14,
                 "fontFamily": "Tahoma, Geneva, Verdana, sans-serif"},
 )
 _cache: dict = {}

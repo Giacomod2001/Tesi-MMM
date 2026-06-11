@@ -227,7 +227,7 @@ def render(_f, _b, _r, sel):
                 textposition="top center",
                 textfont=dict(color=col, size=11),
                 marker=dict(color=col, size=12, symbol="circle",
-                            line=dict(color="#fff", width=1.5)),
+                            line=dict(color="#1A2332", width=1.5)),
                 showlegend=False,
                 hovertemplate=(f"{ch} — Spesa attuale<br>spesa media: "
                                "%{x:,.0f} €/sett.<br>candidature stimate: "

@@ -31,10 +31,10 @@ def saturazione(p: dict, spesa_media: float):
 
 
 TBL_STYLE = dict(
-    style_header={"backgroundColor": "#14202F", "color": "#E8ECF1",
-                  "border": "1px solid #2D3848"},
-    style_cell={"backgroundColor": "#1A2332", "color": "#E8ECF1",
-                "border": "1px solid #2D3848", "fontSize": 14,
+    style_header={"backgroundColor": "#EEF2F8", "color": "#1A2332",
+                  "border": "1px solid #E3E1DA", "fontWeight": "600"},
+    style_cell={"backgroundColor": "#FFFFFF", "color": "#1A2332",
+                "border": "1px solid #E3E1DA", "fontSize": 14,
                 "fontFamily": "Tahoma, Geneva, Verdana, sans-serif"},
 )
 
@@ -55,35 +55,28 @@ def layout():
              "min": c["min"], "max": c["max"]} for ch, c in cons.items()]
     return html.Div([
         html.H2("3. Ottimizzazione del budget"),
-        html.P("Imposta il budget e i tuoi vincoli: il modello propone come "
-               "ridistribuire la spesa tra i canali per massimizzare le "
-               "candidature a parità di spesa totale. I valori sono "
-               "pre-compilati dal tuo storico.",
-               className="text-secondary"),
+        html.P([
+            "Usando il modello stimato nel ",
+            dcc.Link("Passo 2 (Stima e risposta dei canali)",
+                     href="/predittiva", className="text-info"),
+            ", questa pagina propone come ridistribuire la spesa tra i canali "
+            "per massimizzare le candidature a parità di spesa totale. "
+            "I valori sono pre-compilati dal tuo storico."],
+            className="text-secondary"),
         dbc.Row([
             dbc.Col([
                 dbc.Label("Budget settimanale (€)"),
                 dbc.Input(id="opt-budget", type="number", value=round(weekly),
                           min=1000, step=500),
-                html.Small("Pre-compilato: la tua spesa media storica.",
+                html.Small("Pre-compilato con la tua spesa media storica. Di "
+                           "quanto può variare ogni canale lo decidi con i "
+                           "limiti min/max nella tabella qui sotto.",
                            className="text-secondary"),
-            ], md=3),
-            dbc.Col([
-                dbc.Label("Di quanto può cambiare ogni canale rispetto a oggi"),
-                dcc.Slider(id="opt-maxchange", min=10, max=100, step=5, value=50,
-                           marks={10: "±10%", 25: "±25%", 50: "±50%",
-                                  75: "±75%", 100: "libero"},
-                           tooltip={"placement": "bottom",
-                                    "always_visible": True,
-                                    "template": "±{value}%"}),
-                html.Small("Esempio: ±50% = ogni canale può variare al massimo "
-                           "della metà rispetto a oggi. Più basso = piano più "
-                           "prudente, vicino al mix attuale.",
-                           className="text-secondary"),
-            ], md=5),
+            ], md=6),
             dbc.Col(dbc.Button("Ottimizza il budget", id="btn-opt",
-                               color="info", size="lg", className="mt-4"), md=3),
-        ], className="g-3 mb-3"),
+                               color="info", size="lg", className="mt-4"),
+                    md="auto"),
+        ], className="g-3 mb-3 align-items-start"),
         dbc.Card([
             dbc.CardHeader("I tuoi limiti per canale (contratti, presidi di "
                            "brand) — modificabili"),
@@ -109,10 +102,10 @@ def layout():
 
 @callback(Output("opt-result", "children"),
           Input("btn-opt", "n_clicks"),
-          State("opt-budget", "value"), State("opt-maxchange", "value"),
+          State("opt-budget", "value"),
           State("constraints-table", "data"), prevent_initial_call=True,
           running=[(Output("btn-opt", "disabled"), True, False)])
-def optimize(_, budget, max_change, rows):
+def optimize(_, budget, rows):
     st = store.get()
     if not st.get("fit"):
         return dbc.Alert(["Prima serve il modello: vai alla pagina ",
@@ -124,13 +117,11 @@ def optimize(_, budget, max_change, rows):
     cur = {ch: st["constraints"][ch]["mean"] for ch in channels}
     min_sp = {r["canale"]: float(r["min"]) for r in rows if r.get("min")}
     max_sp = {r["canale"]: float(r["max"]) for r in rows if r.get("max")}
-    mc = (max_change or 50) / 100.0  # slider in % -> frazione (100% = libero)
     try:
         table = allocator.optimize_budget(
             st["fit"]["channels"], cur, total_budget=float(budget),
             min_spend=min_sp or None, max_spend=max_sp or None,
-            max_change_pct=mc if mc < 1 else None,
-            channels=channels)
+            max_change_pct=None, channels=channels)
     except (ValueError, RuntimeError) as e:
         return dbc.Alert(f"Vincoli incompatibili: {e}", color="danger")
 
