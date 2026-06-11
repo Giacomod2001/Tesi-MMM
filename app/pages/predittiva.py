@@ -60,32 +60,21 @@ def layout():
                "Verde: c'è ancora margine di crescita. Ambra: i rendimenti "
                "stanno calando. Rosso: il canale è vicino al suo massimo.",
                className=CAPTION + " mb-3"),
-        dbc.Row([
-            dbc.Col(dbc.Card([
-                dbc.CardHeader("Curve di risposta dei canali"),
-                dbc.CardBody([
-                    dbc.Checklist(id="curve-channels", inline=True,
-                                  options=[{"label": c, "value": c}
-                                           for c in channels],
-                                  value=channels, className="mb-2"),
-                    dcc.Graph(id="fig-curves"),
-                    html.P("Il punto Spesa attuale indica la tua spesa media di "
-                           "oggi. La linea tratteggiata è il massimo raggiungibile "
-                           "del canale; il rombo è la metà saturazione, dove i "
-                           "rendimenti iniziano a calare. Dove la curva si piega, "
-                           "ogni euro in più rende sempre meno.",
-                           className=CAPTION)])],
-                className="border-secondary"), md=7),
-            dbc.Col(dbc.Card([
-                dbc.CardHeader("Verifica del modello: stimato vs reale"),
-                dbc.CardBody([
-                    dcc.Graph(id="fig-fitted"),
-                    html.P("Se le due linee si somigliano, il modello ha capito i "
-                           "tuoi dati. Dove divergono, un fattore esterno non "
-                           "catturato dal modello sta influenzando le candidature.",
-                           className=CAPTION)])],
-                className="border-secondary"), md=5),
-        ], className="g-3 mb-3"),
+        dbc.Card([
+            dbc.CardHeader("Curve di risposta dei canali"),
+            dbc.CardBody([
+                dbc.Checklist(id="curve-channels", inline=True,
+                              options=[{"label": c, "value": c}
+                                       for c in channels],
+                              value=channels, className="mb-2"),
+                dcc.Graph(id="fig-curves"),
+                html.P("Il punto Spesa attuale indica la tua spesa media di "
+                       "oggi. La linea tratteggiata è il massimo raggiungibile "
+                       "del canale; il rombo è la metà saturazione, dove i "
+                       "rendimenti iniziano a calare. Dove la curva si piega, "
+                       "ogni euro in più rende sempre meno.",
+                       className=CAPTION)])],
+            className="border-secondary mb-3"),
         dbc.Accordion([
             dbc.AccordionItem([
                 html.P("Le curve qui sopra sono la stima più probabile. Questa "
@@ -150,17 +139,18 @@ def run_bayes(_):
 
 
 @callback(Output("saturation-row", "children"), Output("fig-curves", "figure"),
-          Output("fig-fitted", "figure"),
           Input("fit-done", "data"), Input("bayes-done", "data"),
           Input("global-refresh", "data"), Input("curve-channels", "value"))
 def render(_f, _b, _r, sel):
     st = store.get()
     df, channels = st["df"], st["channels"]
     fit = st.get("fit")
-    bayes = store.bayes_results()
+    # Bande d'incertezza solo se l'utente le ha calcolate in questa sessione
+    # (dall'accordion "Analisi avanzata"): di default curve nette e leggibili.
+    bayes = store.bayes_results() if _b else None
     sel = [c for c in (sel or channels) if c in channels] or channels
 
-    from transforms import steady_state_response, channel_response
+    from transforms import steady_state_response
 
     # --- semaforo di saturazione ---------------------------------------------
     cards = []
@@ -245,30 +235,4 @@ def render(_f, _b, _r, sel):
     fig.update_layout(xaxis_title="spesa settimanale (€)",
                       yaxis_title="candidature attese / settimana")
 
-    # --- previsto vs reale -----------------------------------------------------
-    fig2 = go.Figure()
-    if fit:
-        pred = np.full(len(df), fit["baseline"]["alpha"], dtype=float)
-        t = np.arange(len(df), dtype=float)
-        w = 2 * np.pi * (t % 52) / 52
-        fr = fit["baseline"]["fourier"]
-        pred += fit["baseline"]["trend_per_week"] * t
-        pred += fr[0] * np.sin(w) + fr[1] * np.cos(w)
-        pred += fr[2] * np.sin(2 * w) + fr[3] * np.cos(2 * w)
-        for c, g in fit.get("controls", {}).items():
-            col_name = c if c in df.columns else f"ctrl_{c}"
-            if col_name in df.columns:
-                z = df[col_name].to_numpy(float)
-                pred += g * (z - z.mean())
-        for ch in channels:
-            pred += channel_response(df[f"spend_{ch}"].to_numpy(float),
-                                     **fit["channels"][ch])
-        fig2.add_scatter(x=df["week"], y=df["applications"],
-                         name="candidature reali",
-                         mode="lines", line=dict(color=theme.AXIS))
-        fig2.add_scatter(x=df["week"], y=pred, name="stimate dal modello",
-                         mode="lines", line=dict(color=theme.COLORS[0]))
-    else:
-        fig2.add_annotation(text="Stima il modello per vedere il confronto",
-                            showarrow=False, font=dict(color=theme.AXIS))
-    return cards, theme.dark(fig, 460), theme.dark(fig2, 460)
+    return cards, theme.dark(fig, 540)

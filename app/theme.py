@@ -2,7 +2,9 @@
 import plotly.graph_objects as go
 
 # Palette serie dati: ordine fisso, stesso canale = stesso colore ovunque.
-COLORS = ["#003580", "#2196F3", "#4CAF50", "#FF9800",
+# Nota: il blu brand #003580 è troppo scuro per una linea su sfondo navy,
+# quindi nei grafici il primo canale usa un blu più chiaro e leggibile.
+COLORS = ["#5B9BFF", "#2196F3", "#4CAF50", "#FF9800",
           "#9C27B0", "#E91E63", "#00BCD4"]
 BG = "rgba(0,0,0,0)"
 GRID = "#2D3848"
