@@ -17,8 +17,8 @@ import os
 import numpy as np
 import pandas as pd
 
-import config
-from transforms import channel_response
+from mmm import config
+from mmm.transforms import channel_response
 
 
 def generate(seed: int = config.SEED) -> pd.DataFrame:

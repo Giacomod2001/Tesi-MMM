@@ -23,8 +23,8 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
-import config
-from transforms import steady_state_response, marginal_response
+from mmm import config
+from mmm.transforms import steady_state_response, marginal_response
 
 
 def total_response(x: np.ndarray, params: dict, channels) -> float:

@@ -22,8 +22,8 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import least_squares
 
-import config
-from transforms import channel_response
+from mmm import config
+from mmm.transforms import channel_response
 
 N_BASE = 6  # alpha, trend, sin1, cos1, sin2, cos2
 
