@@ -4,8 +4,10 @@ import plotly.graph_objects as go
 # Palette serie dati: ordine fisso, stesso canale = stesso colore ovunque.
 # Nota: il blu brand #003580 è troppo scuro per una linea su sfondo navy,
 # quindi nei grafici il primo canale usa un blu più chiaro e leggibile.
-COLORS = ["#5B9BFF", "#2196F3", "#4CAF50", "#FF9800",
-          "#9C27B0", "#E91E63", "#00BCD4"]
+# I primi quattro (google/meta/linkedin/indeed) sono volutamente di famiglie
+# diverse: blu, ciano, verde, arancio — distinguibili a colpo d'occhio.
+COLORS = ["#5B9BFF", "#00BCD4", "#4CAF50", "#FF9800",
+          "#9C27B0", "#E91E63", "#FFD54F"]
 BG = "rgba(0,0,0,0)"
 GRID = "#2D3848"
 AXIS = "#8B95A5"
