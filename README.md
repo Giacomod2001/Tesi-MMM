@@ -1,33 +1,42 @@
-# MMM Budget Allocator
+# MMM + MTA Decision Suite
 
-Marketing Mix Modeling per il recruiting digitale: pipeline analitica, ottimizzatore di budget e interfaccia operativa Streamlit. Dati sintetici (caso di studio, tesi magistrale IULM).
-
-## Struttura del repository
-
-- `mmm/` — pipeline Python
-  - `config.py` — canali, parametri del processo generativo, controlli
-  - `transforms.py` — adstock geometrico + saturazione di Hill
-  - `data_generator.py` — dataset sintetico settimanale (156 settimane)
-  - `ingestion.py` — import automatico di serie esterne (Excel/CSV/PDF/JSON)
-  - `model.py` — fit frequentista (scipy, bound informativi)
-  - `model_bayes.py` — fit bayesiano (PyMC, prior informativi; eseguire offline)
-  - `allocator.py` — ottimizzazione vincolata + pianificazione anno/quarter/mese
-  - `app.py` — interfaccia Streamlit
-  - `run_pipeline.py` — esecuzione end-to-end riproducibile
-  - `test_locale.py` — test di integrazione (usa i file in `mmm/data/esempi/`)
-  - `data/esempi/` — file campione: Excel mensile (mesi italiani),
-    CSV settimanale (date europee), PDF con tabella
+Sistema di supporto decisionale per il budget del recruiting digitale:
+**MMM** (livello strategico, allocazione inter-canale) + **MTA** con catene
+di Markov (livello tattico, riparto intra-canale per campagna).
+Dati sintetici — caso di studio, tesi magistrale IULM.
 
 ## Avvio rapido
 
 ```bash
-pip install -r mmm/requirements.txt
-cd mmm
-python run_pipeline.py      # pipeline completa: dati -> fit -> allocazione
-pip install -r ../requirements-bayes.txt && python model_bayes.py   # fit bayesiano (10-20 min)
-python test_locale.py       # test di integrazione con i file di esempio
-streamlit run app.py        # interfaccia web
+pip install -r requirements.txt
+python -m app.main          # dashboard Dash (tema scuro) su http://127.0.0.1:8050
+```
 
-# opzionale — fit bayesiano offline (10-20 min, richiede: pip install -r requirements-bayes.txt)
-python model_bayes.py       # produce output/bayes_*.json, letti automaticamente dall'app
+Fit bayesiano: si lancia dall'interfaccia (pagina Predittiva, background
+callback) oppure offline. Richiede `pip install -r requirements-bayes.txt`.
+
+## Architettura
+
+- `app/` — dashboard Dash multi-pagina: Descrittiva / Predittiva /
+  Prescrittiva / MTA. Background callback (diskcache) per il fit bayesiano.
+- `core/` — logica agnostica (zero nomi hardcodati):
+  - `schema.py` — auto-detect di date, spese, KPI e controlli in CSV arbitrari;
+    vincoli ottimizzatore derivati dallo storico
+  - `mmm_bayes.py` — fit bayesiano PyMC con prior **Empirical Bayes**
+    (ancorati al fit frequentista o alle scale del dataset; invariante alle
+    unita' di misura)
+  - `mta_markov.py` — attribution Markov (removal effect), metriche volume /
+    utility, riparto tattico del budget di canale tra le campagne
+  - `datagen_mta.py` — generatore di ~800k percorsi utente sintetici
+    (funnel a 3 stadi, demografia, utility per categoria)
+- `mmm/` — pipeline MMM originale (fit frequentista scipy, allocator
+  multi-periodo, ingestione Excel/CSV/PDF, app Streamlit legacy, test)
+- `data/` — percorsi MTA (campione + aggregati di transizione + completo
+  compresso), posterior bayesiane pre-calcolate
+
+## Test e riproducibilita'
+
+```bash
+cd mmm && python run_pipeline.py && python test_locale.py
+python core/datagen_mta.py     # rigenera gli 800k percorsi (seed fisso)
 ```

@@ -1,7 +1,12 @@
 numpy
 pandas
 scipy
-streamlit
 plotly
+dash
+dash-bootstrap-components
+diskcache
+multiprocess
+psutil
+streamlit
 openpyxl
 pdfplumber
