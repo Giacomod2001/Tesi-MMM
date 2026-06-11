@@ -130,3 +130,104 @@ footer, .footer { color: var(--rs-text-muted); }
   background-color: #0F1A2A !important; color: var(--rs-text) !important;
   border: 1px solid var(--rs-border) !important;
 }
+
+/* ============================================================
+   Polish layer — stati, micro-motion, consistenza (registro product)
+   ============================================================ */
+
+/* Numeri allineati (KPI, tabelle, percentuali) */
+h3, h4, .dash-cell, .progress-bar { font-variant-numeric: tabular-nums; }
+
+/* Titoli con interruzioni di riga bilanciate */
+h1, h2, h3, h4, h5 { text-wrap: balance; }
+
+/* Micro-transizioni coerenti (150–200 ms, ease-out) */
+.btn, .navbar .nav-link, .accordion-button,
+.form-control, .form-select, .card {
+  transition: background-color .18s cubic-bezier(.16,1,.3,1),
+              border-color .18s cubic-bezier(.16,1,.3,1),
+              color .18s cubic-bezier(.16,1,.3,1),
+              box-shadow .18s cubic-bezier(.16,1,.3,1),
+              transform .12s cubic-bezier(.16,1,.3,1);
+}
+
+/* Feedback di pressione sui bottoni pieni */
+.btn-info, .btn-primary, .btn-success { transform: translateZ(0); }
+.btn-info:hover, .btn-primary:hover, .btn-success:hover { transform: translateY(-1px); }
+.btn-info:active, .btn-primary:active, .btn-success:active { transform: translateY(0); }
+
+/* Card: piatta a riposo, riconosce il cursore senza fingersi cliccabile */
+.card:hover { border-color: #3A475C !important; }
+
+/* Focus da tastiera visibile e coerente (accessibilità) */
+:focus-visible { outline: 2px solid #2196F3; outline-offset: 2px; border-radius: 4px; }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(33,150,243,.40) !important; }
+.form-control:focus, .form-select:focus {
+  outline: none; border-color: #2196F3 !important;
+  box-shadow: 0 0 0 3px rgba(33,150,243,.18) !important;
+  background-color: #0F1A2A !important;
+}
+
+/* Checkbox / radio in tinta brand */
+input[type="checkbox"], input[type="radio"] { accent-color: #2196F3; }
+
+/* Dropdown (dcc.Dropdown, Dash 3 — classi dash-dropdown-*) */
+.dash-dropdown-trigger {
+  background: #0F1A2A !important;
+  border: 1px solid var(--rs-border) !important;
+  border-radius: 6px !important;
+  color: var(--rs-text) !important;
+}
+.dash-dropdown-value, .dash-dropdown-placeholder { color: var(--rs-text) !important; }
+.dash-dropdown-placeholder { color: var(--rs-text-muted) !important; }
+.dash-dropdown-menu, .dash-dropdown-options, .dash-dropdown [role="listbox"] {
+  background: #0F1A2A !important;
+  border: 1px solid var(--rs-border) !important;
+  border-radius: 6px !important;
+}
+.dash-dropdown-option, .dash-dropdown [role="option"] {
+  background: #0F1A2A !important; color: var(--rs-text) !important;
+}
+.dash-dropdown-option:hover,
+.dash-dropdown-option[aria-selected="true"],
+.dash-dropdown [role="option"]:hover {
+  background: #1C2C44 !important;
+}
+
+/* Dropdown (versioni react-select più vecchie) */
+.Select-control, .is-focused .Select-control,
+.Select-menu-outer {
+  background: #0F1A2A !important; border: 1px solid var(--rs-border) !important;
+}
+.Select-value-label, .Select-placeholder,
+.Select-input > input, .Select-value { color: var(--rs-text) !important; }
+.VirtualizedSelectOption, .Select-option {
+  background: #0F1A2A !important; color: var(--rs-text) !important;
+}
+.VirtualizedSelectFocusedOption, .Select-option.is-focused {
+  background: #1C2C44 !important;
+}
+
+/* Tabelle dati: hover di riga per leggibilità */
+.dash-spreadsheet-container tr:hover td.dash-cell {
+  background-color: #22304A !important;
+}
+
+/* Scrollbar in tinta col tema scuro (niente barra chiara stridente) */
+* { scrollbar-width: thin; scrollbar-color: #2D3848 var(--rs-navy); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--rs-navy); }
+::-webkit-scrollbar-thumb {
+  background: #2D3848; border-radius: 6px;
+  border: 2px solid var(--rs-navy);
+}
+::-webkit-scrollbar-thumb:hover { background: #3A475C; }
+
+/* Reduced motion: nessuna animazione non essenziale */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
