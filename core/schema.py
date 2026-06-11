@@ -105,7 +105,7 @@ def standardize(df: pd.DataFrame, schema: dict | None = None) -> tuple[pd.DataFr
     for c in schema["controls"]:
         name = re.sub(r"\W+", "_", str(c)).strip("_").lower()
         out[f"ctrl_{name}"] = pd.to_numeric(df[c], errors="coerce")
-    out = out.dropna(subset=["applications"]).reset_index(drop=True)
+    out = out.dropna(subset=["applications"]).sort_values("week").reset_index(drop=True)
     schema["channels_clean"] = channels
     return out, schema
 
