@@ -10,3 +10,4 @@ psutil
 streamlit
 openpyxl
 pdfplumber
+gunicorn
