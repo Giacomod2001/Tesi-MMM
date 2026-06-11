@@ -25,11 +25,32 @@ h4 { font-size: 18px; font-weight: 600; color: var(--rs-text); }
 h5, .card-header { font-size: 16px; font-weight: 600; color: var(--rs-text); }
 .text-secondary, .small { color: var(--rs-text-muted) !important; }
 
-/* Navbar */
-.navbar { background-color: var(--rs-blue) !important; border-bottom: none !important; }
-.navbar .nav-link { color: #C8D4E8 !important; font-weight: 600; }
-.navbar .nav-link.active { color: #FFFFFF !important; border-bottom: 2px solid #FFFFFF; }
-.navbar-brand { color: #FFFFFF !important; }
+/* Navbar — navy sobrio, compatto, accento blu solo su brand e voce attiva */
+.rs-navbar {
+  background-color: #0B1A2E !important;
+  border-bottom: 1px solid var(--rs-border) !important;
+  padding-top: .35rem !important;
+  padding-bottom: .35rem !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,.4);
+}
+.rs-brand { color: #2196F3 !important; font-size: 18px; letter-spacing: .2px; }
+.rs-brand-sub { color: var(--rs-text-muted) !important; font-size: 13px; font-weight: 400; }
+.navbar-brand { display: inline-flex; align-items: baseline; }
+
+.navbar .nav-link {
+  color: var(--rs-text-muted) !important;
+  font-weight: 500;
+  font-size: 13.5px;
+  white-space: nowrap;
+  padding: .35rem .7rem !important;
+  border-bottom: 2px solid transparent;
+}
+.navbar .nav-link:hover { color: var(--rs-text) !important; }
+.navbar .nav-link.active {
+  color: #FFFFFF !important;
+  border-bottom: 2px solid #2196F3;
+}
+.navbar .nav-link .bi { opacity: .75; }
 
 /* Card */
 .card {

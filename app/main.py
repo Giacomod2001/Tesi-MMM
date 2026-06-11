@@ -41,14 +41,15 @@ NAV = [("1. Analisi dei dati", "/", "bi-graph-up"),
 
 navbar = dbc.Navbar(
     dbc.Container([
-        dbc.NavbarBrand([html.Span("Randstad", className="fw-bold"),
-                         html.Span(" · Budget Media", className="ms-1")],
+        dbc.NavbarBrand([html.Span("Randstad", className="fw-bold rs-brand"),
+                         html.Span("Budget Media", className="ms-2 rs-brand-sub")],
                         href="/"),
         dbc.Nav([dbc.NavLink([html.I(className=f"bi {ic} me-1"), lab],
                              href=href, active="exact")
-                 for lab, href, ic in NAV], navbar=True, className="ms-auto"),
+                 for lab, href, ic in NAV], navbar=True,
+                className="ms-auto flex-nowrap"),
     ], fluid=True),
-    dark=True, sticky="top",
+    dark=True, sticky="top", className="rs-navbar",
 )
 
 guida = dbc.Accordion([
