@@ -101,10 +101,10 @@ def layout():
           Input("btn-fit", "n_clicks"), prevent_initial_call=True,
           running=[(Output("btn-fit", "disabled"), True, False),
                    (Output("fit-status", "children"),
-                    html.Span([dbc.Spinner(size="sm",
-                                           spinner_style={"marginRight": "8px"}),
-                               "Stima in corso (circa un minuto)…"],
-                              className="text-secondary"), "")])
+                    html.Div([
+                        html.Div("Stima frequentista in corso (pochi secondi)...", className="text-secondary small mb-1"),
+                        dbc.Progress(value=100, animated=True, striped=True, color="info", style={"height": "10px"})
+                    ]), "")])
 def run_fit(_):
     st = store.get()
     import model as mmm_model                       # mmm/ e' nel sys.path
@@ -122,10 +122,10 @@ def run_fit(_):
           background=True, prevent_initial_call=True,
           running=[(Output("btn-bayes", "disabled"), True, False),
                    (Output("bayes-status", "children"),
-                    html.Span([dbc.Spinner(size="sm",
-                                           spinner_style={"marginRight": "8px"}),
-                               "Calcolo in corso: puoi continuare a navigare."],
-                              className="text-secondary"), "")])
+                    html.Div([
+                        html.Div("Calcolo Bayesiano in background (può richiedere alcuni minuti). Puoi navigare altrove.", className="text-secondary small mb-1"),
+                        dbc.Progress(value=100, animated=True, striped=True, color="success", style={"height": "10px"})
+                    ]), "")])
 def run_bayes(_):
     st = store.get()
     from core.mmm_bayes import fit_bayes

@@ -93,6 +93,23 @@ def layout():
         ], className="border-secondary mb-4"),
         html.Div(id="opt-result"),
         dcc.Download(id="opt-download"),
+        dbc.Accordion([
+            dbc.AccordionItem([
+                html.P("Inserisci il tuo budget annuale totale. Il modello dividerà "
+                       "l'anno in 4 trimestri, allocando più budget nei periodi "
+                       "con maggiore domanda storica, e ottimizzerà il mix di canali "
+                       "per ciascun trimestre.", className="text-secondary"),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Label("Budget Annuale (€)"),
+                        dbc.Input(id="opt-annual-budget", type="number", value=round(weekly * 52), step=5000),
+                    ], md=4),
+                    dbc.Col(dbc.Button("Genera Piano Trimestrale", id="btn-annual-opt",
+                                       color="primary", className="mt-4"), md="auto"),
+                ], className="g-3 mb-3 align-items-start"),
+                html.Div(id="annual-opt-result")
+            ], title="Pianificazione Multi-Periodo (Annuale/Trimestrale)")
+        ], start_collapsed=True, className="mb-4"),
         html.Div(dcc.Link("Vuoi vedere il dettaglio per campagna? -> "
                           "Attribuzione per campagna",
                           href="/mta", className="text-info"),
@@ -170,9 +187,11 @@ def optimize(_, budget, rows):
     # --- grafico attuale vs proposto, con variazione % sopra le barre --------
     fig = go.Figure()
     fig.add_bar(x=table["canale"], y=table["spesa_corrente"],
-                name="spesa attuale", marker_color=theme.AXIS)
+                name="spesa attuale", marker_color=theme.AXIS,
+                hovertemplate="Attuale: %{y:,.0f} €<extra></extra>")
     fig.add_bar(x=table["canale"], y=table["spesa_ottimale"],
-                name="spesa ottimale", marker_color=theme.COLORS[0])
+                name="spesa ottimale", marker_color=theme.COLORS[0],
+                hovertemplate="Ottimale: %{y:,.0f} €<extra></extra>")
     for _, r in table.iterrows():
         v = float(r["variazione_pct"])
         fig.add_annotation(
@@ -255,3 +274,36 @@ def download_plan(_):
         return dash.no_update
     return dcc.send_data_frame(exp.to_csv, "piano_riallocazione.csv",
                                index=False, encoding="utf-8-sig")
+
+@callback(Output("annual-opt-result", "children"),
+          Input("btn-annual-opt", "n_clicks"),
+          State("opt-annual-budget", "value"),
+          prevent_initial_call=True)
+def optimize_annual(_, annual_budget):
+    st = store.get()
+    if not st.get("fit"):
+        return dbc.Alert("Prima stima il modello nella pagina Stima e Risposta.", color="warning")
+    import allocator
+    try:
+        df = st["df"]
+        weights = allocator.suggest_period_weights(df, "quarter")
+        plan = allocator.plan_periods(
+            st["fit"]["channels"], total_budget=float(annual_budget),
+            granularity="quarter", period_weights=weights,
+            channels=st["channels"])
+    except Exception as e:
+        return dbc.Alert(f"Errore nella pianificazione: {e}", color="danger")
+    
+    plan_disp = plan.copy()
+    plan_disp.columns = ["Trimestre", "Canale", "Budget Trimestre (€)", "Spesa Settimanale (€)", 
+                         "Cand. Sett.", "Cand. Trimestre", "ROAS marg."]
+    for c in ["Budget Trimestre (€)", "Spesa Settimanale (€)", "Cand. Sett.", "Cand. Trimestre"]:
+        plan_disp[c] = plan_disp[c].round(0).apply(lambda x: f"{x:,.0f}")
+    plan_disp["ROAS marg."] = plan_disp["ROAS marg."].round(2)
+    
+    return dash_table.DataTable(
+        data=plan_disp.to_dict("records"),
+        columns=[{"name": c, "id": c} for c in plan_disp.columns],
+        **TBL_STYLE
+    )
+
