@@ -11,12 +11,23 @@ import plotly.graph_objects as go
 from dash import Input, Output, State, callback, dash_table, dcc, html
 
 from app import store, theme
-from app.pages.predittiva import saturazione
 
 dash.register_page(__name__, path="/prescrittiva", name="3 · Ottimizzazione",
                    order=2)
 
 CAPTION = "text-secondary small mt-2 mb-0"
+SAT_VERDE, SAT_GIALLO = 0.70, 0.90
+
+
+def saturazione(p: dict, spesa_media: float):
+    """Quota dell'effetto massimo raggiunta alla spesa media corrente."""
+    from transforms import steady_state_response
+    quota = steady_state_response(spesa_media, **p) / p["beta"] if p["beta"] else 0.0
+    if quota < SAT_VERDE:
+        return quota, "🟢", "Margine di crescita", "success"
+    if quota < SAT_GIALLO:
+        return quota, "🟡", "Si sta saturando", "warning"
+    return quota, "🔴", "Saturato", "danger"
 
 TBL_STYLE = dict(
     style_header={"backgroundColor": "#1a1d24", "color": "#e8e9ed",
