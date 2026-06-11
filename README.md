@@ -1,42 +1,40 @@
 # MMM + MTA Decision Suite
 
-Sistema di supporto decisionale per il budget del recruiting digitale:
-**MMM** (livello strategico, allocazione inter-canale) + **MTA** con catene
-di Markov (livello tattico, riparto intra-canale per campagna).
-Dati sintetici — caso di studio, tesi magistrale IULM.
+**Applicazione Live:** [https://tesi-mmm.onrender.com](https://tesi-mmm.onrender.com)
 
-## Avvio rapido
+Sistema di supporto decisionale per il budget del recruiting digitale, sviluppato per una tesi magistrale IULM. L'applicazione combina due modelli:
+1. **MMM (Marketing Mix Modeling)**: livello strategico per l'allocazione del budget tra i canali (con stima della saturazione e dei ritorni marginali).
+2. **MTA (Multi-Touch Attribution) con Catene di Markov**: livello tattico per ripartire il budget di canale sulle singole campagne, basato sull'analisi dei percorsi di conversione (Removal Effect).
+
+*L'app usa dati sintetici dimostrativi a scopo accademico.*
+
+## 🚀 Avvio rapido (Locale)
 
 ```bash
+# Installa le dipendenze
 pip install -r requirements.txt
-python -m app.main          # dashboard Dash (tema scuro) su http://127.0.0.1:8050
+
+# Avvia l'applicazione Dash
+python -m app.main
 ```
+Apri il browser su `http://127.0.0.1:8050`
 
-Fit bayesiano: si lancia dall'interfaccia (pagina Predittiva, background
-callback) oppure offline. Richiede `pip install -r requirements-bayes.txt`.
+*Nota: per l'analisi avanzata dell'incertezza (modello Bayesiano in background) è richiesto `pip install -r requirements-bayes.txt`.*
 
-## Architettura
+## 🏗️ Architettura
 
-- `app/` — dashboard Dash multi-pagina: Descrittiva / Predittiva /
-  Prescrittiva / MTA. Background callback (diskcache) per il fit bayesiano.
-- `core/` — logica agnostica (zero nomi hardcodati):
-  - `schema.py` — auto-detect di date, spese, KPI e controlli in CSV arbitrari;
-    vincoli ottimizzatore derivati dallo storico
-  - `mmm_bayes.py` — fit bayesiano PyMC con prior **Empirical Bayes**
-    (ancorati al fit frequentista o alle scale del dataset; invariante alle
-    unita' di misura)
-  - `mta_markov.py` — attribution Markov (removal effect), metriche volume /
-    utility, riparto tattico del budget di canale tra le campagne
-  - `datagen_mta.py` — generatore di ~800k percorsi utente sintetici
-    (funnel a 3 stadi, demografia, utility per categoria)
-- `mmm/` — pipeline MMM originale (fit frequentista scipy, allocator
-  multi-periodo, ingestione Excel/CSV/PDF, app Streamlit legacy, test)
-- `data/` — percorsi MTA (campione + aggregati di transizione + completo
-  compresso), posterior bayesiane pre-calcolate
+- `app/` — Dashboard multi-pagina sviluppata in **Dash** (tema scuro). Include 4 sezioni: Analisi Descrittiva, Stima & Risposta, Ottimizzazione (MMM), Riparto Campagne (MTA).
+- `core/` — Logica agnostica del motore (zero nomi hardcodati):
+  - `schema.py` — Riconoscimento automatico di date, spese, KPI e controlli da un CSV arbitrario; generazione intelligente dei vincoli.
+  - `mmm_bayes.py` — Fit bayesiano con **PyMC** (Empirical Bayes invariante alle unità di misura).
+  - `mta_markov.py` — Attribution multi-touch tramite catene di Markov e calcolo del Removal Effect.
+- `mmm/` — Contiene i modelli frequentisti di MMM (Hill + Adstock) e l'algoritmo di ottimizzazione (SLSQP), oltre al generatore del dataset sintetico.
+- `data/` — Dataset sintetici settimanali e percorsi aggregati per MTA pre-calcolati.
 
-## Test e riproducibilita'
+## 📝 Struttura dell'Applicazione
 
-```bash
-cd mmm && python run_pipeline.py && python test_locale.py
-python core/datagen_mta.py     # rigenera gli 800k percorsi (seed fisso)
-```
+L'app è costruita per guidare l'utente passo-passo dal dato grezzo alla decisione di business:
+1. **1. Analisi Descrittiva**: Esplorazione dello storico investimenti (leve), risultati (KPI) e trend esterni.
+2. **2. Stima & Risposta**: Il modello calcola quanto rende ogni euro speso su un canale e dove inizia a saturare, generando le curve di risposta. Include la fascia di incertezza tramite calcolo bayesiano asincrono.
+3. **3. Ottimizzazione**: Un algoritmo di ottimizzazione propone il mix ideale di spesa per massimizzare le conversioni a parità di budget.
+4. **4. Riparto Campagne**: Calata la strategia di canale, le catene di Markov dicono all'utente come allocare esattamente quel budget di canale tra le varie campagne attive.
