@@ -1,0 +1,111 @@
+/* Tema Randstad — strumento interno Budget Media */
+:root {
+  --rs-blue: #003580;
+  --rs-blue-hover: #00275E;
+  --rs-navy: #0A1628;
+  --rs-card: #1A2332;
+  --rs-border: #2D3848;
+  --rs-text: #E8ECF1;
+  --rs-text-muted: #8B95A5;
+  --rs-success: #28A745;
+  --rs-warning: #E8A317;
+  --rs-danger: #DC3545;
+}
+
+html, body {
+  background-color: var(--rs-navy) !important;
+  color: var(--rs-text) !important;
+  font-family: "Tahoma", "Geneva", "Verdana", sans-serif !important;
+  font-size: 14px;
+}
+
+h1, h2 { font-size: 22px; font-weight: 700; color: var(--rs-text); }
+h3 { font-size: 28px; font-weight: 700; color: var(--rs-text); }
+h4 { font-size: 18px; font-weight: 600; color: var(--rs-text); }
+h5, .card-header { font-size: 16px; font-weight: 600; color: var(--rs-text); }
+.text-secondary, .small { color: var(--rs-text-muted) !important; }
+
+/* Navbar */
+.navbar { background-color: var(--rs-blue) !important; border-bottom: none !important; }
+.navbar .nav-link { color: #C8D4E8 !important; font-weight: 600; }
+.navbar .nav-link.active { color: #FFFFFF !important; border-bottom: 2px solid #FFFFFF; }
+.navbar-brand { color: #FFFFFF !important; }
+
+/* Card */
+.card {
+  background-color: var(--rs-card) !important;
+  border: 1px solid var(--rs-border) !important;
+  border-radius: 8px !important;
+}
+.card-header {
+  background-color: transparent !important;
+  border-bottom: 1px solid var(--rs-border) !important;
+}
+.card-body { padding: 20px; }
+
+/* Bottoni primari */
+.btn-info, .btn-primary {
+  background-color: var(--rs-blue) !important;
+  border-color: var(--rs-blue) !important;
+  color: #FFFFFF !important;
+  border-radius: 6px !important;
+}
+.btn-info:hover, .btn-primary:hover {
+  background-color: var(--rs-blue-hover) !important;
+  border-color: var(--rs-blue-hover) !important;
+}
+.btn-outline-info {
+  color: #4DA3FF !important;
+  border-color: var(--rs-blue) !important;
+  border-radius: 6px !important;
+}
+.btn-outline-info:hover {
+  background-color: var(--rs-blue) !important;
+  color: #FFFFFF !important;
+}
+.btn-success {
+  background-color: var(--rs-blue) !important;
+  border-color: var(--rs-blue) !important;
+  color: #FFFFFF !important;
+  border-radius: 6px !important;
+}
+.btn-success:hover {
+  background-color: var(--rs-blue-hover) !important;
+  border-color: var(--rs-blue-hover) !important;
+}
+.btn-outline-success {
+  color: #4DA3FF !important; border-color: var(--rs-blue) !important;
+}
+.btn-outline-success:hover { background-color: var(--rs-blue) !important; color: #FFF !important; }
+.btn-warning, .btn-outline-warning {
+  border-radius: 6px !important;
+}
+
+/* Progress */
+.progress { background-color: var(--rs-border) !important; }
+
+/* Accordion */
+.accordion-item { background-color: var(--rs-card) !important; border: 1px solid var(--rs-border) !important; }
+.accordion-button { background-color: var(--rs-card) !important; color: var(--rs-text) !important; font-weight: 600; }
+.accordion-button:not(.collapsed) { background-color: #14202F !important; color: var(--rs-text) !important; }
+.accordion-body { color: var(--rs-text); }
+
+/* Alert (toni attenuati su navy) */
+.alert-info { background-color: #12263F !important; border-color: var(--rs-blue) !important; color: var(--rs-text) !important; }
+.alert-warning { background-color: #2A2410 !important; border-color: var(--rs-warning) !important; color: var(--rs-text) !important; }
+.alert-success { background-color: #122A18 !important; border-color: var(--rs-success) !important; color: var(--rs-text) !important; }
+
+/* Text accent helper classes restyle */
+.text-info { color: #4DA3FF !important; }
+.text-success { color: var(--rs-success) !important; }
+.text-warning { color: var(--rs-warning) !important; }
+.text-danger { color: var(--rs-danger) !important; }
+
+/* Footer */
+footer, .footer { color: var(--rs-text-muted); }
+
+/* Input / dropdown */
+.form-control, .form-select {
+  background-color: #0F1A2A !important; color: var(--rs-text) !important;
+  border: 1px solid var(--rs-border) !important;
+}

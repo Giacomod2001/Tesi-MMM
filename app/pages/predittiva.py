@@ -19,69 +19,70 @@ dash.register_page(__name__, path="/predittiva", name="2 · Stima & Risposta",
 
 CAPTION = "text-secondary small mt-2 mb-0"
 
-# Soglie del semaforo di saturazione: quota dell'effetto massimo (beta)
-# raggiunta alla spesa media corrente.
-SAT_VERDE, SAT_GIALLO = 0.70, 0.90
+# Soglie di saturazione: quota dell'effetto massimo (beta) raggiunta alla
+# spesa media corrente.
+SAT_VERDE, SAT_GIALLO = 0.50, 0.80
 
 
 def saturazione(p: dict, spesa_media: float):
-    """Quota dell'effetto massimo raggiunta alla spesa media corrente."""
+    """Quota dell'effetto massimo raggiunta alla spesa media corrente.
+
+    Ritorna (quota, etichetta, colore_bootstrap).
+    """
     from transforms import steady_state_response
     quota = steady_state_response(spesa_media, **p) / p["beta"] if p["beta"] else 0.0
     if quota < SAT_VERDE:
-        return quota, "🟢", "Margine di crescita", "success"
+        return quota, "Margine di crescita", "success"
     if quota < SAT_GIALLO:
-        return quota, "🟡", "Si sta saturando", "warning"
-    return quota, "🔴", "Saturato", "danger"
+        return quota, "Si sta saturando", "warning"
+    return quota, "Saturato", "danger"
 
 
 def layout():
     st = store.get()
     channels = st["channels"]
     return html.Div([
-        html.H2("2 · Stima & Risposta — quanto rende ogni canale"),
-        html.P("Premi il bottone: il modello impara dallo storico quanti "
-               "risultati porta ogni euro speso su ciascun canale e quando un "
-               "canale è “saturo” (spendere di più non porta quasi nulla).",
+        html.H2("2. Stima e risposta dei canali"),
+        html.P("Premi il bottone: il modello impara dallo storico quante "
+               "candidature porta ogni euro speso su ciascun canale e quando un "
+               "canale è vicino alla saturazione.",
                className="text-secondary"),
         dbc.Row([
-            dbc.Col(dbc.Button([html.I(className="bi bi-lightning-charge me-2"),
-                                "Stima il modello"],
+            dbc.Col(dbc.Button("Stima il modello",
                                id="btn-fit", color="info", size="lg"),
                     width="auto"),
             dbc.Col(html.Div(id="fit-status", className="pt-2")),
         ], className="g-2 mb-4", align="center"),
         dcc.Store(id="fit-done"), dcc.Store(id="bayes-done"),
-        html.H5("Semaforo di saturazione — quanto ogni canale è vicino al suo tetto",
-                className="mt-2"),
+        html.H5("Saturazione dei canali", className="mt-2"),
         dbc.Row(id="saturation-row", className="g-3 mb-1"),
         html.P("Più la barra è piena, meno rende spendere di più su quel canale. "
-               "🟢 c'è ancora spazio per crescere · 🟡 i rendimenti stanno calando "
-               "· 🔴 il canale ha quasi raggiunto il suo massimo.",
+               "Verde: c'è ancora margine di crescita. Ambra: i rendimenti "
+               "stanno calando. Rosso: il canale è vicino al suo massimo.",
                className=CAPTION + " mb-3"),
         dbc.Row([
             dbc.Col(dbc.Card([
-                dbc.CardHeader("📈 Curve di risposta — quanti risultati per ogni "
-                               "livello di spesa"),
+                dbc.CardHeader("Curve di risposta dei canali"),
                 dbc.CardBody([
                     dbc.Checklist(id="curve-channels", inline=True,
                                   options=[{"label": c, "value": c}
                                            for c in channels],
                                   value=channels, className="mb-2"),
                     dcc.Graph(id="fig-curves"),
-                    html.P("Il pallino “SEI QUI” indica la tua spesa media attuale. "
-                           "La linea tratteggiata è il tetto massimo del canale; il "
-                           "rombo è il punto di metà saturazione, dove i rendimenti "
-                           "iniziano a calare. Dove la curva si piega, ogni euro in "
-                           "più rende sempre meno.", className=CAPTION)])],
+                    html.P("Il punto Spesa attuale indica la tua spesa media di "
+                           "oggi. La linea tratteggiata è il massimo raggiungibile "
+                           "del canale; il rombo è la metà saturazione, dove i "
+                           "rendimenti iniziano a calare. Dove la curva si piega, "
+                           "ogni euro in più rende sempre meno.",
+                           className=CAPTION)])],
                 className="border-secondary"), md=7),
             dbc.Col(dbc.Card([
-                dbc.CardHeader("✅ Controllo qualità — previsto vs reale"),
+                dbc.CardHeader("Verifica del modello: stimato vs reale"),
                 dbc.CardBody([
                     dcc.Graph(id="fig-fitted"),
                     html.P("Se le due linee si somigliano, il modello ha capito i "
                            "tuoi dati. Dove divergono, un fattore esterno non "
-                           "catturato dal modello sta influenzando i risultati.",
+                           "catturato dal modello sta influenzando le candidature.",
                            className=CAPTION)])],
                 className="border-secondary"), md=5),
         ], className="g-3 mb-3"),
@@ -90,21 +91,19 @@ def layout():
                 html.P("Le curve qui sopra sono la stima più probabile. Questa "
                        "analisi (più lenta, gira in background mentre continui a "
                        "navigare) calcola anche quanto sono affidabili: aggiunge "
-                       "alle curve una fascia di incertezza — più la fascia è "
-                       "stretta, più la stima è solida.",
+                       "alle curve una fascia di incertezza (90%) — più la fascia "
+                       "è stretta, più la stima è solida.",
                        className="text-secondary"),
                 dbc.Row([
-                    dbc.Col(dbc.Button([html.I(className="bi bi-cpu me-2"),
-                                        "Calcola l'incertezza (in background)"],
-                                       id="btn-bayes", color="warning",
+                    dbc.Col(dbc.Button("Calcola l'incertezza (in background)",
+                                       id="btn-bayes", color="info",
                                        outline=True), width="auto"),
                     dbc.Col(html.Div(id="bayes-status", className="pt-1")),
                 ], className="g-2", align="center"),
-            ], title="🔬 Analisi avanzata (incertezza) — facoltativa"),
+            ], title="Analisi avanzata (incertezza)"),
         ], start_collapsed=True, className="mb-3"),
-        html.Div(dbc.Button(["Prossimo passo: 3 · Ottimizzazione",
-                             html.I(className="bi bi-arrow-right ms-2")],
-                            href="/prescrittiva", color="info", outline=True),
+        html.Div(dcc.Link("Prossimo passo: Ottimizzazione del budget ->",
+                          href="/prescrittiva", className="text-info"),
                  className="text-end mt-4"),
     ])
 
@@ -123,11 +122,9 @@ def run_fit(_):
     st["fit"] = mmm_model.fit(st["df"], channels=st["channels"], controls=[])
     d = st["fit"]["diagnostics"]
     return True, html.Span([
-        html.B("✅ Modello pronto. ", className="text-success"),
-        f"Il modello spiega il {d['r2']:.0%} dell'andamento dei tuoi risultati "
-        f"(errore medio {d['mape']:.1%}): ",
-        html.Span("sopra il 90% la stima è molto affidabile.",
-                  className="text-secondary"),
+        html.B("Modello stimato con successo. ", className="text-success"),
+        f"Il modello spiega il {d['r2']:.0%} dell'andamento reale "
+        f"(errore medio: {d['mape']:.1%}).",
     ])
 
 
@@ -148,8 +145,8 @@ def run_bayes(_):
     with open(store.BAYES_PATH, "w") as f:
         json.dump(res, f)
     return True, html.Span(
-        "✅ Fatto: le curve ora mostrano anche la fascia di incertezza.",
-        className="text-warning")
+        "Fatto: le curve ora mostrano anche la fascia di incertezza (90%).",
+        className="text-success")
 
 
 @callback(Output("saturation-row", "children"), Output("fig-curves", "figure"),
@@ -171,19 +168,20 @@ def render(_f, _b, _r, sel):
         for ch in channels:
             p = fit["channels"][ch]
             m = df[f"spend_{ch}"].mean()
-            quota, icona, stato, color = saturazione(p, m)
+            quota, stato, color = saturazione(p, m)
             cards.append(dbc.Col(dbc.Card(dbc.CardBody([
                 html.Div(ch, className="fw-bold"),
                 dbc.Progress(value=min(quota, 1.0) * 100, color=color,
                              className="my-2", style={"height": "10px"}),
-                html.Div(f"{icona} {stato} — {quota:.0%} del massimo",
+                html.Div(f"{stato} — {quota:.0%} del potenziale",
                          className="small"),
-                html.Small(f"alla spesa attuale ({m:,.0f} €/sett.)",
+                html.Small(f"{ch} è al {quota:.0%} del potenziale massimo, "
+                           f"alla spesa attuale ({m:,.0f} €/sett.).",
                            className="text-secondary"),
             ]), className="border-secondary h-100"), md=3))
     else:
         cards.append(dbc.Col(dbc.Alert(
-            "Premi “Stima il modello” qui sopra per calcolare curve e "
+            "Premi Stima il modello qui sopra per calcolare curve e "
             "saturazione (serve circa un minuto).",
             color="secondary"), md=12))
 
@@ -213,11 +211,15 @@ def render(_f, _b, _r, sel):
             p = fit["channels"][ch]
             m = float(df[f"spend_{ch}"].mean())
             y_now = steady_state_response(m, **p)
-            # tetto massimo del canale (linea tratteggiata)
+            # massimo raggiungibile del canale (linea tratteggiata)
             fig.add_scatter(x=[0, xmax], y=[p["beta"], p["beta"]],
-                            mode="lines", showlegend=False,
+                            mode="lines", name=f"{ch} · Massimo raggiungibile",
+                            showlegend=False,
                             line=dict(color=col, width=1, dash="dot"),
-                            opacity=0.5, hoverinfo="skip")
+                            opacity=0.5,
+                            hovertemplate=(f"{ch} — Massimo raggiungibile<br>"
+                                           "%{y:,.1f} candidature/sett."
+                                           "<extra></extra>"))
             # punto di metà saturazione: i rendimenti iniziano a calare
             x_half = p["K"] * (1 - p["lam"])
             if x_half <= xmax:
@@ -226,22 +228,22 @@ def render(_f, _b, _r, sel):
                     marker=dict(color=col, size=9, symbol="diamond-open",
                                 line=dict(width=2)),
                     showlegend=False,
-                    hovertemplate=(f"{ch} — metà saturazione<br>da qui in poi i "
+                    hovertemplate=(f"{ch} — Metà saturazione<br>da qui in poi i "
                                    "rendimenti calano<br>spesa: %{x:,.0f} €/sett."
                                    "<extra></extra>"))
-            # marcatore "SEI QUI" alla spesa media attuale
+            # marcatore "Spesa attuale"
             fig.add_scatter(
-                x=[m], y=[y_now], mode="markers+text", text=["SEI QUI"],
+                x=[m], y=[y_now], mode="markers+text", text=["Spesa attuale"],
                 textposition="top center",
                 textfont=dict(color=col, size=11),
                 marker=dict(color=col, size=12, symbol="circle",
                             line=dict(color="#fff", width=1.5)),
                 showlegend=False,
-                hovertemplate=(f"{ch} — oggi<br>spesa media: %{{x:,.0f}} €/sett."
-                               f"<br>risultati attesi: %{{y:,.1f}}/sett."
-                               "<extra></extra>"))
+                hovertemplate=(f"{ch} — Spesa attuale<br>spesa media: "
+                               "%{x:,.0f} €/sett.<br>candidature stimate: "
+                               "%{y:,.1f}/sett.<extra></extra>"))
     fig.update_layout(xaxis_title="spesa settimanale (€)",
-                      yaxis_title="risultati attesi / settimana")
+                      yaxis_title="candidature attese / settimana")
 
     # --- previsto vs reale -----------------------------------------------------
     fig2 = go.Figure()
@@ -262,11 +264,11 @@ def render(_f, _b, _r, sel):
             pred += channel_response(df[f"spend_{ch}"].to_numpy(float),
                                      **fit["channels"][ch])
         fig2.add_scatter(x=df["week"], y=df["applications"],
-                         name="risultati reali",
-                         mode="lines", line=dict(color="#888"))
-        fig2.add_scatter(x=df["week"], y=pred, name="previsti dal modello",
-                         mode="lines", line=dict(color="#4cc9f0"))
+                         name="candidature reali",
+                         mode="lines", line=dict(color=theme.AXIS))
+        fig2.add_scatter(x=df["week"], y=pred, name="stimate dal modello",
+                         mode="lines", line=dict(color=theme.COLORS[0]))
     else:
         fig2.add_annotation(text="Stima il modello per vedere il confronto",
-                            showarrow=False, font=dict(color="#888"))
+                            showarrow=False, font=dict(color=theme.AXIS))
     return cards, theme.dark(fig, 460), theme.dark(fig2, 460)

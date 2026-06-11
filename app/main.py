@@ -30,50 +30,46 @@ app = Dash(
     external_stylesheets=[dbc.themes.CYBORG, dbc.icons.BOOTSTRAP],
     background_callback_manager=background_manager,
     suppress_callback_exceptions=True,
-    title="MMM + MTA Decision Suite",
+    title="Randstad · Budget Media",
 )
 server = app.server
 
-NAV = [("1 · Analisi", "/", "bi-graph-up"),
-       ("2 · Stima & Risposta", "/predittiva", "bi-activity"),
-       ("3 · Ottimizzazione", "/prescrittiva", "bi-sliders"),
-       ("4 · Budget per Campagna", "/mta", "bi-diagram-3")]
+NAV = [("1. Analisi dei dati", "/", "bi-graph-up"),
+       ("2. Stima e risposta dei canali", "/predittiva", "bi-activity"),
+       ("3. Ottimizzazione del budget", "/prescrittiva", "bi-sliders"),
+       ("4. Attribuzione per campagna", "/mta", "bi-diagram-3")]
 
 navbar = dbc.Navbar(
     dbc.Container([
-        dbc.NavbarBrand([html.Span("MMM", className="fw-bold text-info"),
-                         html.Span(" + "),
-                         html.Span("MTA", className="fw-bold text-warning"),
-                         html.Span(" Decision Suite", className="ms-1")], href="/"),
+        dbc.NavbarBrand([html.Span("Randstad", className="fw-bold"),
+                         html.Span(" · Budget Media", className="ms-1")],
+                        href="/"),
         dbc.Nav([dbc.NavLink([html.I(className=f"bi {ic} me-1"), lab],
                              href=href, active="exact")
                  for lab, href, ic in NAV], navbar=True, className="ms-auto"),
     ], fluid=True),
-    color="dark", dark=True, sticky="top", className="border-bottom border-secondary",
+    dark=True, sticky="top",
 )
 
 guida = dbc.Accordion([
     dbc.AccordionItem([
-        html.P("Questa app ti aiuta a decidere come distribuire il budget "
-               "marketing tra i canali per ottenere più risultati "
-               "(es. candidature). Si usa in 3 passi:", className="mb-2"),
-        html.Ol([
-            html.Li([html.B("1 · Analisi"), " — guarda lo storico: quanto hai "
-                     "speso su ogni canale, che risultati hai ottenuto e quali "
-                     "fattori esterni hanno pesato. Puoi caricare il tuo CSV."]),
-            html.Li([html.B("2 · Stima & Risposta"), " — il modello impara dai "
-                     "dati quanto rende ogni euro su ciascun canale e quando un "
-                     "canale è “saturo” (spendere di più non porta "
-                     "quasi nulla)."]),
-            html.Li([html.B("3 · Ottimizzazione"), " — imposti budget e vincoli "
-                     "e il modello propone come ridistribuire la spesa tra i "
-                     "canali per massimizzare i risultati."]),
-        ], className="mb-2"),
-        html.P([html.B("4 · Budget per Campagna"), " (opzionale) — scende un "
-                "livello più in dettaglio: dentro ogni canale, quanto budget "
-                "dare a ogni singola campagna."], className="mb-0"),
-    ], title="ℹ️ Come si usa (3 passi) — leggi prima di iniziare",
-       item_id="guida"),
+        html.P("Tre passi per ottimizzare il tuo budget media:",
+               className="mb-2"),
+        html.P([html.B("Passo 1 — Analisi dei dati: "),
+                "esplora la spesa per canale e l'andamento delle candidature "
+                "nel tempo."], className="mb-2"),
+        html.P([html.B("Passo 2 — Stima e risposta dei canali: "),
+                "il modello calcola quanto ogni euro investito produce in "
+                "termini di candidature. Vedrai le curve di risposta e i punti "
+                "di saturazione."], className="mb-2"),
+        html.P([html.B("Passo 3 — Ottimizzazione del budget: "),
+                "il modello propone una riallocazione del budget per "
+                "massimizzare le candidature a parità di spesa totale."],
+               className="mb-2"),
+        html.P([html.B("Opzionale: "), "la sezione Attribuzione per campagna "
+                "mostra il contributo di ogni singola campagna nel percorso "
+                "di conversione."], className="mb-0"),
+    ], title="Come funziona questo strumento", item_id="guida"),
 ], active_item="guida", className="mb-3")
 
 app.layout = html.Div([
@@ -84,7 +80,7 @@ app.layout = html.Div([
     html.Footer(dbc.Container(html.Small(
         "Dati sintetici — caso di studio ispirato al recruiting digitale. "
         "Le raccomandazioni sono supporto alla decisione, non sostituiscono "
-        "il giudizio del manager (human-in-the-middle).",
+        "il giudizio del manager.",
         className="text-secondary"), fluid=True), className="py-3"),
 ])
 

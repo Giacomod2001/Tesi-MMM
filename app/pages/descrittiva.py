@@ -10,7 +10,7 @@ from dash import Input, Output, State, callback, dcc, html
 
 from app import store, theme
 
-dash.register_page(__name__, path="/", name="1 · Analisi", order=0)
+dash.register_page(__name__, path="/", name="1. Analisi dei dati", order=0)
 
 CAPTION = "text-secondary small mt-2 mb-0"
 RULE = {"settimanale": None, "mensile": "ME", "trimestrale": "QE"}
@@ -34,7 +34,7 @@ def _aggrega(d: pd.DataFrame, vista: str) -> pd.DataFrame:
 def layout():
     return html.Div([
         dbc.Row([
-            dbc.Col(html.H2("1 · Analisi — cosa è successo"), md=8),
+            dbc.Col(html.H2("1. Analisi dei dati"), md=8),
             dbc.Col(dcc.Upload(
                 id="upload-mmm",
                 children=dbc.Button([html.I(className="bi bi-upload me-2"),
@@ -62,35 +62,35 @@ def layout():
         ], className="g-3 mb-3"),
         dbc.Row([
             dbc.Col(dbc.Card([
-                dbc.CardHeader("🎛️ Le tue Leve — spesa per canale"),
+                dbc.CardHeader("Spesa per canale"),
                 dbc.CardBody([
                     dcc.Graph(id="fig-spend"),
                     html.P("Suggerimento: usa le caselle qui sopra (o clicca la "
-                           "legenda) per mostrare/nascondere i canali. Nella vista "
-                           "settimanale i “buchi” sono pause campagna.",
+                           "legenda) per mostrare o nascondere i canali. Nella "
+                           "vista settimanale i vuoti sono pause campagna.",
                            className=CAPTION)])],
                 className="border-secondary"), md=7),
             dbc.Col(dbc.Card([
-                dbc.CardHeader("🎯 Il tuo KPI — risultati nel tempo"),
+                dbc.CardHeader("Candidature (KPI)"),
                 dbc.CardBody([
                     dcc.Graph(id="fig-target"),
                     html.P("La linea tratteggiata è la media mobile a 4 settimane: "
-                           "segui quella per leggere il trend senza il rumore "
+                           "seguila per leggere il trend senza il rumore "
                            "settimanale.", className=CAPTION)])],
                 className="border-secondary"), md=5),
         ], className="g-3 mb-3"),
         dbc.Row([
             dbc.Col(dbc.Card([
-                dbc.CardHeader("🌍 Fattori Esterni — non dipendono dal tuo budget"),
+                dbc.CardHeader("Fattori esterni"),
                 dbc.CardBody([
                     dcc.Graph(id="fig-controls"),
-                    html.P("Queste variabili (es. domanda di mercato) influenzano i "
-                           "risultati ma non le controlli tu: il modello le usa per "
-                           "non attribuire ai canali meriti non loro.",
-                           className=CAPTION)])],
+                    html.P("Queste variabili (es. domanda di mercato) influenzano "
+                           "le candidature ma non dipendono dal tuo budget: il "
+                           "modello le usa per non attribuire ai canali meriti "
+                           "non loro.", className=CAPTION)])],
                 className="border-secondary"), md=7),
             dbc.Col(dbc.Card([
-                dbc.CardHeader("🥧 Com'è diviso il budget oggi"),
+                dbc.CardHeader("Mix di spesa attuale"),
                 dbc.CardBody([
                     dcc.Graph(id="fig-mix"),
                     html.P("Quota di spesa storica per canale: è il punto di "
@@ -98,9 +98,8 @@ def layout():
                            className=CAPTION)])],
                 className="border-secondary"), md=5),
         ], className="g-3"),
-        html.Div(dbc.Button(["Prossimo passo: 2 · Stima & Risposta",
-                             html.I(className="bi bi-arrow-right ms-2")],
-                            href="/predittiva", color="info", outline=True),
+        html.Div(dcc.Link(["Prossimo passo: Stima e risposta dei canali ->"],
+                          href="/predittiva", className="text-info"),
                  className="text-end mt-4"),
     ])
 
@@ -160,10 +159,14 @@ def figures(sel, vista, _refresh):
     sel = [c for c in (sel or channels) if c in channels] or channels
 
     agg = _aggrega(df, vista)
+    # stesso canale = stesso colore in tutta l'app (indice nell'elenco completo)
+    color_of = {c: theme.COLORS[i % len(theme.COLORS)]
+                for i, c in enumerate(channels)}
 
     f1 = go.Figure()
     for c in sel:
-        f1.add_scatter(x=agg["week"], y=agg[f"spend_{c}"], name=c, mode="lines")
+        f1.add_scatter(x=agg["week"], y=agg[f"spend_{c}"], name=c, mode="lines",
+                       line=dict(color=color_of[c]))
     f1.update_layout(yaxis_title="spesa (€/settimana, media)", xaxis_title="")
 
     # KPI + media mobile 4 settimane (calcolata sul dato settimanale)
@@ -172,12 +175,12 @@ def figures(sel, vista, _refresh):
     kpi_agg = _aggrega(kpi, vista)
     f2 = go.Figure([
         go.Scatter(x=kpi_agg["week"], y=kpi_agg["kpi"], mode="lines",
-                   name="Risultati", line=dict(color="#4cc9f0", width=2)),
+                   name="Candidature", line=dict(color=theme.COLORS[0], width=2)),
         go.Scatter(x=kpi_agg["week"], y=kpi_agg["ma"], mode="lines",
-                   name="Trend (media mobile 4 sett.)",
-                   line=dict(color="#ffd166", width=2, dash="dash")),
+                   name="Trend", line=dict(color=theme.WARNING, width=2,
+                                           dash="dash")),
     ])
-    f2.update_layout(yaxis_title="risultati / settimana", xaxis_title="")
+    f2.update_layout(yaxis_title="candidature / settimana", xaxis_title="")
 
     f3 = go.Figure()
     ctrl = [c for c in df.columns if c.startswith("ctrl_")]
@@ -187,9 +190,10 @@ def figures(sel, vista, _refresh):
     if not ctrl:
         f3.add_annotation(text="Nessun fattore esterno nel dataset: puoi "
                                "caricarlo insieme al CSV",
-                          showarrow=False, font=dict(color="#888"))
+                          showarrow=False, font=dict(color=theme.AXIS))
 
     f4 = go.Figure(go.Pie(labels=sel,
                           values=[df[f"spend_{c}"].sum() for c in sel],
+                          marker=dict(colors=[color_of[c] for c in sel]),
                           hole=.55))
     return theme.dark(f1), theme.dark(f2), theme.dark(f3), theme.dark(f4, 380)

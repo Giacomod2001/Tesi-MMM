@@ -16,16 +16,17 @@ from dash import Input, Output, State, callback, dash_table, dcc, html
 from app import store, theme
 from core import mta_markov as mk
 
-dash.register_page(__name__, path="/mta", name="4 · Budget per Campagna",
-                   order=3)
+dash.register_page(__name__, path="/mta",
+                   name="4. Attribuzione per campagna", order=3)
 
 CAPTION = "text-secondary small mt-2 mb-0"
 
 TBL_STYLE = dict(
-    style_header={"backgroundColor": "#1a1d24", "color": "#e8e9ed",
-                  "border": "1px solid #2a2e3a"},
-    style_cell={"backgroundColor": "#12141a", "color": "#e8e9ed",
-                "border": "1px solid #2a2e3a", "fontSize": 14},
+    style_header={"backgroundColor": "#14202F", "color": "#E8ECF1",
+                  "border": "1px solid #2D3848"},
+    style_cell={"backgroundColor": "#1A2332", "color": "#E8ECF1",
+                "border": "1px solid #2D3848", "fontSize": 14,
+                "fontFamily": "Tahoma, Geneva, Verdana, sans-serif"},
 )
 _cache: dict = {}
 
@@ -33,18 +34,16 @@ _cache: dict = {}
 def layout():
     return html.Div([
         dbc.Row([
-            dbc.Col(html.H2("4 · Budget per Campagna — il dettaglio dentro "
-                            "ogni canale"), md=8),
+            dbc.Col(html.H2("4. Attribuzione per campagna"), md=8),
             dbc.Col(dcc.Upload(
                 id="upload-mta",
-                children=dbc.Button([html.I(className="bi bi-upload me-2"),
-                                     "Carica percorsi (CSV)"],
-                                    outline=True, color="warning"),
+                children=dbc.Button("Carica percorsi (CSV)",
+                                    outline=True, color="info"),
                 multiple=False), md=4, className="text-end"),
         ], align="center"),
-        html.P("Le pagine precedenti decidono quanto budget dare a ogni CANALE. "
+        html.P("Le pagine precedenti decidono quanto budget dare a ogni canale. "
                "Qui scendi di un livello: quanto budget dare a ogni singola "
-               "CAMPAGNA, in base a quanto ciascuna contribuisce davvero alle "
+               "campagna, in base a quanto ciascuna contribuisce davvero alle "
                "conversioni lungo i percorsi degli utenti.",
                className="text-secondary"),
         html.Div(id="mta-feedback"),
@@ -53,7 +52,7 @@ def layout():
                      dbc.RadioItems(id="mta-metric", inline=True, value="volume",
                                     options=[{"label": " Numero di conversioni",
                                               "value": "volume"},
-                                             {"label": " Valore economico (€)",
+                                             {"label": " Valore economico (EUR)",
                                               "value": "utility"}])], md=5),
             dbc.Col([dbc.Label("Mostra solo un canale"),
                      dcc.Dropdown(id="mta-channel", value="ALL",
@@ -65,8 +64,8 @@ def layout():
         dbc.Row(id="mta-kpi", className="g-3 mb-3"),
         dbc.Row([
             dbc.Col(dbc.Card([
-                dbc.CardHeader("🏆 Importanza di ogni campagna (contributo reale "
-                               "alle conversioni)"),
+                dbc.CardHeader("Contributo reale di ogni campagna alle "
+                               "conversioni"),
                 dbc.CardBody([
                     dcc.Graph(id="fig-attr"),
                     html.P("Ogni barra è una campagna, colorata per canale: più è "
@@ -75,22 +74,21 @@ def layout():
                            "vedere un canale alla volta.", className=CAPTION)])],
                 className="border-secondary"), md=6),
             dbc.Col(dbc.Card([
-                dbc.CardHeader("💶 Come dividere il budget del canale tra le "
+                dbc.CardHeader("Come dividere il budget del canale tra le "
                                "campagne"),
                 dbc.CardBody([
                     dcc.Graph(id="fig-split"),
                     html.P("Il budget di ogni canale (deciso nella pagina "
-                           "3 · Ottimizzazione) viene ripartito tra le sue "
-                           "campagne in proporzione alla loro importanza.",
+                           "Ottimizzazione del budget) viene ripartito tra le "
+                           "sue campagne in proporzione al loro contributo.",
                            className=CAPTION)])],
                 className="border-secondary"), md=6),
         ], className="g-3 mb-3"),
         dbc.Card([dbc.CardHeader("Piano per campagna (€/settimana)"),
                   dbc.CardBody(html.Div(id="mta-table"))],
                  className="border-secondary"),
-        html.Div(dbc.Button([html.I(className="bi bi-arrow-left me-2"),
-                             "Hai finito il giro: torna a 1 · Analisi"],
-                            href="/", color="info", outline=True),
+        html.Div(dcc.Link("<- Torna ad Analisi dei dati", href="/",
+                          className="text-info"),
                  className="text-end mt-4"),
     ])
 
@@ -179,7 +177,7 @@ def render(metric, ch_filter, contents, filename):
     f1.update_layout(xaxis_title=f"contributo reale ({unit})", height=420)
     if attr_view.empty:
         f1.add_annotation(text="Nessuna campagna per questo canale",
-                          showarrow=False, font=dict(color="#888"))
+                          showarrow=False, font=dict(color=theme.AXIS))
 
     f2 = go.Figure()
     if not split_view.empty:
@@ -192,7 +190,7 @@ def render(metric, ch_filter, contents, filename):
     else:
         f2.add_annotation(text="Nessuna corrispondenza tra i canali del piano "
                                "e le campagne dei percorsi",
-                          showarrow=False, font=dict(color="#888"))
+                          showarrow=False, font=dict(color=theme.AXIS))
 
     tbl = split_view.copy()
     if not tbl.empty:
@@ -211,6 +209,6 @@ def render(metric, ch_filter, contents, filename):
                       "  ·  budget canale: ",
                       html.Em("piano ottimizzato" if st.get("plan")
                               else "spesa media storica (per il piano vai a "
-                                   "3 · Ottimizzazione)")])
+                                   "Ottimizzazione del budget)")])
     return (kpis, theme.dark(f1, 420), theme.dark(f2, 420), table, src,
             feedback, ch_options)

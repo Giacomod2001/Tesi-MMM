@@ -12,11 +12,11 @@ from dash import Input, Output, State, callback, dash_table, dcc, html
 
 from app import store, theme
 
-dash.register_page(__name__, path="/prescrittiva", name="3 · Ottimizzazione",
-                   order=2)
+dash.register_page(__name__, path="/prescrittiva",
+                   name="3. Ottimizzazione del budget", order=2)
 
 CAPTION = "text-secondary small mt-2 mb-0"
-SAT_VERDE, SAT_GIALLO = 0.70, 0.90
+SAT_VERDE, SAT_GIALLO = 0.50, 0.80
 
 
 def saturazione(p: dict, spesa_media: float):
@@ -24,17 +24,18 @@ def saturazione(p: dict, spesa_media: float):
     from transforms import steady_state_response
     quota = steady_state_response(spesa_media, **p) / p["beta"] if p["beta"] else 0.0
     if quota < SAT_VERDE:
-        return quota, "🟢", "Margine di crescita", "success"
+        return quota, "ha ancora margine di crescita"
     if quota < SAT_GIALLO:
-        return quota, "🟡", "Si sta saturando", "warning"
-    return quota, "🔴", "Saturato", "danger"
+        return quota, "si sta saturando"
+    return quota, "è vicino alla saturazione"
+
 
 TBL_STYLE = dict(
-    style_header={"backgroundColor": "#1a1d24", "color": "#e8e9ed",
-                  "border": "1px solid #2a2e3a"},
-    style_cell={"backgroundColor": "#12141a", "color": "#e8e9ed",
-                "border": "1px solid #2a2e3a", "fontSize": 14,
-                "fontFamily": "inherit"},
+    style_header={"backgroundColor": "#14202F", "color": "#E8ECF1",
+                  "border": "1px solid #2D3848"},
+    style_cell={"backgroundColor": "#1A2332", "color": "#E8ECF1",
+                "border": "1px solid #2D3848", "fontSize": 14,
+                "fontFamily": "Tahoma, Geneva, Verdana, sans-serif"},
 )
 
 
@@ -53,10 +54,11 @@ def layout():
     rows = [{"canale": ch, "spesa media": round(c["mean"]),
              "min": c["min"], "max": c["max"]} for ch, c in cons.items()]
     return html.Div([
-        html.H2("3 · Ottimizzazione — quanto budget a ogni canale"),
+        html.H2("3. Ottimizzazione del budget"),
         html.P("Imposta il budget e i tuoi vincoli: il modello propone come "
-               "ridistribuire la spesa tra i canali per ottenere più risultati "
-               "a parità di budget. I valori sono pre-compilati dal tuo storico.",
+               "ridistribuire la spesa tra i canali per massimizzare le "
+               "candidature a parità di spesa totale. I valori sono "
+               "pre-compilati dal tuo storico.",
                className="text-secondary"),
         dbc.Row([
             dbc.Col([
@@ -73,13 +75,12 @@ def layout():
                 html.Small("Un limite basso = piano prudente, vicino al mix "
                            "attuale.", className="text-secondary"),
             ], md=5),
-            dbc.Col(dbc.Button([html.I(className="bi bi-magic me-2"),
-                                "Trova il mix migliore"], id="btn-opt",
+            dbc.Col(dbc.Button("Ottimizza il budget", id="btn-opt",
                                color="info", size="lg", className="mt-4"), md=3),
         ], className="g-3 mb-3"),
         dbc.Card([
-            dbc.CardHeader("✋ I tuoi limiti per canale (contratti, presidi di "
-                           "brand…) — modificabili"),
+            dbc.CardHeader("I tuoi limiti per canale (contratti, presidi di "
+                           "brand) — modificabili"),
             dbc.CardBody([
                 dash_table.DataTable(
                     id="constraints-table", data=rows,
@@ -87,15 +88,15 @@ def layout():
                               "editable": c in ("min", "max"),
                               "type": "numeric"} for c in rows[0]],
                     editable=True, **TBL_STYLE),
-                html.P("“min” e “max” sono la spesa settimanale minima e massima "
+                html.P("min e max sono la spesa settimanale minima e massima "
                        "che ammetti per ogni canale: il piano proposto li "
                        "rispetterà sempre.", className=CAPTION)]),
         ], className="border-secondary mb-4"),
         html.Div(id="opt-result"),
         dcc.Download(id="opt-download"),
-        html.Div(dbc.Button(["Prossimo passo: 4 · Budget per Campagna",
-                             html.I(className="bi bi-arrow-right ms-2")],
-                            href="/mta", color="info", outline=True),
+        html.Div(dcc.Link("Vuoi vedere il dettaglio per campagna? -> "
+                          "Attribuzione per campagna",
+                          href="/mta", className="text-info"),
                  className="text-end mt-4"),
     ])
 
@@ -109,8 +110,9 @@ def optimize(_, budget, max_change, rows):
     st = store.get()
     if not st.get("fit"):
         return dbc.Alert(["Prima serve il modello: vai alla pagina ",
-                          dcc.Link("2 · Stima & Risposta", href="/predittiva"),
-                          " e premi “Stima il modello”."], color="warning")
+                          dcc.Link("Stima e risposta dei canali",
+                                   href="/predittiva"),
+                          " e premi Stima il modello."], color="warning")
     import allocator
     channels = st["channels"]
     cur = {ch: st["constraints"][ch]["mean"] for ch in channels}
@@ -134,9 +136,9 @@ def optimize(_, budget, max_change, rows):
 
     # --- PRIMA vs DOPO -------------------------------------------------------
     metriche = dbc.Row([
-        dbc.Col(_metric("Risultati col mix attuale", f"{prima:,.0f}",
+        dbc.Col(_metric("Candidature con il mix attuale", f"{prima:,.0f}",
                         "a settimana, stesso budget", "secondary"), md=4),
-        dbc.Col(_metric("Risultati col piano nuovo", f"{dopo:,.0f}",
+        dbc.Col(_metric("Candidature con il piano ottimizzato", f"{dopo:,.0f}",
                         "a settimana, stesso budget"), md=4),
         dbc.Col(_metric("Differenza", f"{delta:+,.0f}",
                         f"{delta / prima:+.1%} a parità di spesa" if prima
@@ -150,75 +152,73 @@ def optimize(_, budget, max_change, rows):
     ch_su = max(delta_sp, key=delta_sp.get)
     soglia = 0.01 * float(budget)  # spostamenti sotto l'1% non si commentano
     if delta_sp[ch_su] > soglia and delta_sp[ch_giu] < -soglia:
-        q_giu, ic_giu, lab_giu, _c = saturazione(st["fit"]["channels"][ch_giu],
-                                                 cur[ch_giu])
-        q_su, ic_su, lab_su, _c = saturazione(st["fit"]["channels"][ch_su],
-                                              cur[ch_su])
+        _q_giu, lab_giu = saturazione(st["fit"]["channels"][ch_giu], cur[ch_giu])
+        _q_su, lab_su = saturazione(st["fit"]["channels"][ch_su], cur[ch_su])
+        pct = f" del {delta / prima:.0%}" if prima else ""
         spiegazione = [
-            html.B("Perché questa raccomandazione? "),
-            f"Il modello suggerisce di spostare budget da ", html.B(ch_giu),
-            f" verso ", html.B(ch_su), f": alla spesa attuale {ch_giu} è al "
-            f"{q_giu:.0%} del suo effetto massimo ({ic_giu} {lab_giu.lower()}), "
-            f"mentre {ch_su} è al {q_su:.0%} ({ic_su} {lab_su.lower()}): lì ogni "
-            "euro in più rende ancora."]
+            "Il modello suggerisce di spostare budget da ", html.B(ch_giu),
+            f" ({lab_giu}) verso ", html.B(ch_su),
+            f" (che {lab_su}), aumentando le candidature stimate{pct}."]
     else:
         spiegazione = [
-            html.B("Il piano resta vicino al mix attuale: "),
-            "secondo il modello l'allocazione di oggi è già quasi ottimale "
-            "rispetto ai vincoli impostati."]
+            "Il piano resta vicino al mix attuale: secondo il modello "
+            "l'allocazione di oggi è già quasi ottimale rispetto ai vincoli "
+            "impostati."]
 
     # --- grafico attuale vs proposto, con variazione % sopra le barre --------
     fig = go.Figure()
     fig.add_bar(x=table["canale"], y=table["spesa_corrente"],
-                name="spesa attuale", marker_color="#5c677d")
+                name="spesa attuale", marker_color=theme.AXIS)
     fig.add_bar(x=table["canale"], y=table["spesa_ottimale"],
-                name="spesa proposta", marker_color="#4cc9f0")
+                name="spesa ottimale", marker_color=theme.COLORS[0])
     for _, r in table.iterrows():
         v = float(r["variazione_pct"])
         fig.add_annotation(
             x=r["canale"],
             y=max(float(r["spesa_corrente"]), float(r["spesa_ottimale"])),
             text=f"{v:+.0%}", yshift=14, showarrow=False,
-            font=dict(color="#06d6a0" if v >= 0 else "#ef476f", size=13))
+            font=dict(color=theme.POSITIVE if v >= 0 else theme.NEGATIVE,
+                      size=13))
     fig.update_layout(barmode="group", yaxis_title="€/settimana")
 
     fig2 = go.Figure(go.Bar(
         x=table["canale"], y=table["roas_marg_ottimale_x1000"],
-        marker_color="#ffd166", name="resa dell'ultimo euro"))
+        marker_color=theme.WARNING, name="resa dell'ultimo euro"))
     fig2.add_hline(y=float(table["roas_marg_ottimale_x1000"].mean()),
-                   line_dash="dot", line_color="#aaa",
+                   line_dash="dot", line_color=theme.AXIS,
                    annotation_text="resa pareggiata tra i canali")
-    fig2.update_layout(yaxis_title="risultati ogni 1.000 € aggiuntivi")
+    fig2.update_layout(yaxis_title="candidature ogni 1.000 € aggiuntivi")
 
     detail = table[["canale", "spesa_corrente", "spesa_ottimale",
                     "variazione_pct", "candidature_ottimali"]].copy()
-    detail.columns = ["canale", "attuale €", "proposta €", "Δ%", "risultati att."]
-    detail = detail.round({"attuale €": 0, "proposta €": 0, "risultati att.": 1})
+    detail.columns = ["canale", "attuale €", "ottimale €", "Δ%",
+                      "candidature att."]
+    detail = detail.round({"attuale €": 0, "ottimale €": 0,
+                           "candidature att.": 1})
     detail["Δ%"] = (table["variazione_pct"] * 100).round(1)
 
     # dati per l'export CSV
     st["opt_export"] = pd.DataFrame({
         "Canale": table["canale"],
         "Spesa attuale (EUR/sett)": table["spesa_corrente"].round(0),
-        "Spesa proposta (EUR/sett)": table["spesa_ottimale"].round(0),
+        "Spesa ottimale (EUR/sett)": table["spesa_ottimale"].round(0),
         "Variazione (%)": (table["variazione_pct"] * 100).round(1),
-        "Risultati attesi (a sett)": table["candidature_ottimali"].round(1),
+        "Candidature attese (a sett)": table["candidature_ottimali"].round(1),
     })
 
     return html.Div([
-        html.H4("Prima vs Dopo", className="mt-2"),
-        html.P("“Prima” = stesso budget distribuito come oggi. "
-               "“Dopo” = il piano proposto dal modello.",
+        html.H4("Confronto Prima vs Dopo", className="mt-2"),
+        html.P("Prima = stesso budget distribuito come oggi. "
+               "Dopo = il piano ottimizzato dal modello.",
                className="text-secondary small"),
         metriche,
         dbc.Alert(spiegazione, color="info", className="mb-2"),
-        dbc.Alert(["⚠️ Questa è una ", html.B("RACCOMANDAZIONE"),
-                   " basata sul modello: valuta contratti e obiettivi di brand. "
-                   "La decisione finale resta tua."],
+        dbc.Alert(["Attenzione: questa è una raccomandazione basata sul "
+                   "modello. La decisione finale spetta a te."],
                   color="warning", className="mb-3"),
         dbc.Row([
             dbc.Col(dbc.Card([
-                dbc.CardHeader("📊 Spesa attuale vs proposta, canale per canale"),
+                dbc.CardHeader("Spesa attuale vs ottimale, canale per canale"),
                 dbc.CardBody([
                     dcc.Graph(figure=theme.dark(fig)),
                     html.P("La percentuale sopra le barre indica di quanto il "
@@ -226,14 +226,13 @@ def optimize(_, budget, max_change, rows):
                            "ogni canale.", className=CAPTION)])],
                 className="border-secondary"), md=7),
             dbc.Col(dbc.Card([
-                dbc.CardHeader("⚖️ Quanto rende l'ultimo euro su ogni canale"),
+                dbc.CardHeader("Come leggere i rendimenti marginali"),
                 dbc.CardBody([
                     dcc.Graph(figure=theme.dark(fig2)),
-                    html.P("Cosa guardare: dopo l'ottimizzazione le barre sono "
-                           "circa alla stessa altezza. Significa che non conviene "
-                           "più spostare budget: l'ultimo euro rende uguale "
-                           "ovunque, ed è il segno di un piano ben bilanciato.",
-                           className=CAPTION)])],
+                    html.P("Questo grafico mostra quanto produce ogni euro "
+                           "aggiuntivo per canale. Quando tutte le barre sono "
+                           "alla stessa altezza, il budget è distribuito nel "
+                           "modo più efficiente.", className=CAPTION)])],
                 className="border-secondary"), md=5),
         ], className="g-3 mb-3"),
         dbc.Card([dbc.CardHeader("Dettaglio del piano"),
@@ -241,9 +240,8 @@ def optimize(_, budget, max_change, rows):
                       data=detail.to_dict("records"),
                       columns=[{"name": c, "id": c} for c in detail.columns],
                       **TBL_STYLE))], className="border-secondary mb-3"),
-        dbc.Button([html.I(className="bi bi-download me-2"),
-                    "📥 Scarica piano (CSV)"], id="btn-export-plan",
-                   color="success", outline=True),
+        dbc.Button("Scarica piano (CSV)", id="btn-export-plan",
+                   color="success"),
     ])
 
 
