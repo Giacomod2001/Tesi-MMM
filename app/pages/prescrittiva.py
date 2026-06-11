@@ -70,10 +70,16 @@ def layout():
             ], md=3),
             dbc.Col([
                 dbc.Label("Di quanto può cambiare ogni canale rispetto a oggi"),
-                dcc.Slider(id="opt-maxchange", min=0.1, max=1.0, step=0.05,
-                           value=0.5, marks={.1: "±10%", .5: "±50%", 1: "libero"}),
-                html.Small("Un limite basso = piano prudente, vicino al mix "
-                           "attuale.", className="text-secondary"),
+                dcc.Slider(id="opt-maxchange", min=10, max=100, step=5, value=50,
+                           marks={10: "±10%", 25: "±25%", 50: "±50%",
+                                  75: "±75%", 100: "libero"},
+                           tooltip={"placement": "bottom",
+                                    "always_visible": True,
+                                    "template": "±{value}%"}),
+                html.Small("Esempio: ±50% = ogni canale può variare al massimo "
+                           "della metà rispetto a oggi. Più basso = piano più "
+                           "prudente, vicino al mix attuale.",
+                           className="text-secondary"),
             ], md=5),
             dbc.Col(dbc.Button("Ottimizza il budget", id="btn-opt",
                                color="info", size="lg", className="mt-4"), md=3),
@@ -118,11 +124,12 @@ def optimize(_, budget, max_change, rows):
     cur = {ch: st["constraints"][ch]["mean"] for ch in channels}
     min_sp = {r["canale"]: float(r["min"]) for r in rows if r.get("min")}
     max_sp = {r["canale"]: float(r["max"]) for r in rows if r.get("max")}
+    mc = (max_change or 50) / 100.0  # slider in % -> frazione (100% = libero)
     try:
         table = allocator.optimize_budget(
             st["fit"]["channels"], cur, total_budget=float(budget),
             min_spend=min_sp or None, max_spend=max_sp or None,
-            max_change_pct=max_change if max_change < 1 else None,
+            max_change_pct=mc if mc < 1 else None,
             channels=channels)
     except (ValueError, RuntimeError) as e:
         return dbc.Alert(f"Vincoli incompatibili: {e}", color="danger")

@@ -105,6 +105,32 @@ h5, .card-header { font-size: 16px; font-weight: 600; color: var(--rs-text); }
 /* Progress */
 .progress { background-color: var(--rs-border) !important; }
 
+/* Slider (dcc.Slider, Dash 3 — classi dash-slider-*) in tinta brand */
+.dash-slider-track { background-color: var(--rs-border) !important; }
+.dash-slider-range { background-color: #2196F3 !important; }
+.dash-slider-thumb {
+  background-color: #2196F3 !important; border: 2px solid #2196F3 !important;
+}
+.dash-slider-thumb:hover, .dash-slider-thumb:focus,
+.dash-slider-thumb:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 5px rgba(33,150,243,.30) !important;
+}
+.dash-slider-mark { color: var(--rs-text-muted) !important; font-size: 12px; }
+.dash-slider-tooltip, .dash-slider-tooltip.always-visible {
+  background-color: #1C2C44 !important; color: #FFFFFF !important;
+  border: 1px solid var(--rs-border) !important; font-size: 12px;
+}
+/* Il valore è già nel tooltip "±50%": nascondo il campo numerico ridondante */
+.dash-slider-container .dash-range-slider-input,
+.dash-slider-container .dash-slider-input { display: none !important; }
+
+/* Fallback per versioni rc-slider più vecchie */
+.rc-slider-track { background-color: #2196F3 !important; }
+.rc-slider-rail { background-color: var(--rs-border) !important; }
+.rc-slider-handle { border-color: #2196F3 !important; background-color: #2196F3 !important; }
+.rc-slider-mark-text { color: var(--rs-text-muted) !important; }
+
 /* Accordion */
 .accordion-item { background-color: var(--rs-card) !important; border: 1px solid var(--rs-border) !important; }
 .accordion-button { background-color: var(--rs-card) !important; color: var(--rs-text) !important; font-weight: 600; }
