@@ -34,10 +34,10 @@ app = Dash(
 )
 server = app.server
 
-NAV = [("Descrittiva", "/", "bi-graph-up"),
-       ("Predittiva", "/predittiva", "bi-activity"),
-       ("Prescrittiva", "/prescrittiva", "bi-sliders"),
-       ("MTA Campagne", "/mta", "bi-diagram-3")]
+NAV = [("1 · Analisi", "/", "bi-graph-up"),
+       ("2 · Stima & Risposta", "/predittiva", "bi-activity"),
+       ("3 · Ottimizzazione", "/prescrittiva", "bi-sliders"),
+       ("4 · Budget per Campagna", "/mta", "bi-diagram-3")]
 
 navbar = dbc.Navbar(
     dbc.Container([
@@ -52,10 +52,35 @@ navbar = dbc.Navbar(
     color="dark", dark=True, sticky="top", className="border-bottom border-secondary",
 )
 
+guida = dbc.Accordion([
+    dbc.AccordionItem([
+        html.P("Questa app ti aiuta a decidere come distribuire il budget "
+               "marketing tra i canali per ottenere più risultati "
+               "(es. candidature). Si usa in 3 passi:", className="mb-2"),
+        html.Ol([
+            html.Li([html.B("1 · Analisi"), " — guarda lo storico: quanto hai "
+                     "speso su ogni canale, che risultati hai ottenuto e quali "
+                     "fattori esterni hanno pesato. Puoi caricare il tuo CSV."]),
+            html.Li([html.B("2 · Stima & Risposta"), " — il modello impara dai "
+                     "dati quanto rende ogni euro su ciascun canale e quando un "
+                     "canale è “saturo” (spendere di più non porta "
+                     "quasi nulla)."]),
+            html.Li([html.B("3 · Ottimizzazione"), " — imposti budget e vincoli "
+                     "e il modello propone come ridistribuire la spesa tra i "
+                     "canali per massimizzare i risultati."]),
+        ], className="mb-2"),
+        html.P([html.B("4 · Budget per Campagna"), " (opzionale) — scende un "
+                "livello più in dettaglio: dentro ogni canale, quanto budget "
+                "dare a ogni singola campagna."], className="mb-0"),
+    ], title="ℹ️ Come si usa (3 passi) — leggi prima di iniziare",
+       item_id="guida"),
+], active_item="guida", className="mb-3")
+
 app.layout = html.Div([
     navbar,
     dcc.Store(id="global-refresh"),
-    dbc.Container(dash.page_container, fluid=True, className="py-4 px-4"),
+    dbc.Container([guida, dash.page_container], fluid=True,
+                  className="py-4 px-4"),
     html.Footer(dbc.Container(html.Small(
         "Dati sintetici — caso di studio ispirato al recruiting digitale. "
         "Le raccomandazioni sono supporto alla decisione, non sostituiscono "

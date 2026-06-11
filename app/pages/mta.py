@@ -1,7 +1,7 @@
-"""Livello tattico — MTA: dal budget di canale (MMM) al budget di campagna.
+"""Pagina 4 — BUDGET PER CAMPAGNA: dal budget di canale al budget di campagna.
 
-Attribution multi-touch con catene di Markov (removal effect) sui percorsi
-utente. Ottimizzabile per VOLUME (conversioni) o per UTILITY (fatturato).
+Attribution multi-touch sui percorsi utente (rimozione di un touchpoint dal
+grafo = suo contributo reale). Ottimizzabile per volume o valore economico.
 Completamente agnostico: stati e campagne scoperti dai dati.
 """
 import base64
@@ -16,7 +16,10 @@ from dash import Input, Output, State, callback, dash_table, dcc, html
 from app import store, theme
 from core import mta_markov as mk
 
-dash.register_page(__name__, path="/mta", name="MTA")
+dash.register_page(__name__, path="/mta", name="4 · Budget per Campagna",
+                   order=3)
+
+CAPTION = "text-secondary small mt-2 mb-0"
 
 TBL_STYLE = dict(
     style_header={"backgroundColor": "#1a1d24", "color": "#e8e9ed",
@@ -30,7 +33,8 @@ _cache: dict = {}
 def layout():
     return html.Div([
         dbc.Row([
-            dbc.Col(html.H2("MTA — riparto tattico per campagna"), md=8),
+            dbc.Col(html.H2("4 · Budget per Campagna — il dettaglio dentro "
+                            "ogni canale"), md=8),
             dbc.Col(dcc.Upload(
                 id="upload-mta",
                 children=dbc.Button([html.I(className="bi bi-upload me-2"),
@@ -38,36 +42,56 @@ def layout():
                                     outline=True, color="warning"),
                 multiple=False), md=4, className="text-end"),
         ], align="center"),
-        html.P(["Livello 1 (MMM) decide quanto budget al canale; "
-                "Livello 2 (MTA, catene di Markov) decide come dividerlo "
-                "tra le campagne, in base al contributo reale di ciascun "
-                "touchpoint nei percorsi utente (removal effect)."],
+        html.P("Le pagine precedenti decidono quanto budget dare a ogni CANALE. "
+               "Qui scendi di un livello: quanto budget dare a ogni singola "
+               "CAMPAGNA, in base a quanto ciascuna contribuisce davvero alle "
+               "conversioni lungo i percorsi degli utenti.",
                className="text-secondary"),
         html.Div(id="mta-feedback"),
         dbc.Row([
-            dbc.Col([dbc.Label("Ottimizza per:"),
+            dbc.Col([dbc.Label("Cosa vuoi massimizzare?"),
                      dbc.RadioItems(id="mta-metric", inline=True, value="volume",
-                                    options=[{"label": " Volume (conversioni)",
+                                    options=[{"label": " Numero di conversioni",
                                               "value": "volume"},
-                                             {"label": " Utility (fatturato)",
-                                              "value": "utility"}])], md=6),
-            dbc.Col(html.Div(id="mta-source", className="text-secondary pt-3"),
-                    md=6, className="text-end"),
-        ], className="mb-3"),
+                                             {"label": " Valore economico (€)",
+                                              "value": "utility"}])], md=5),
+            dbc.Col([dbc.Label("Mostra solo un canale"),
+                     dcc.Dropdown(id="mta-channel", value="ALL",
+                                  clearable=False,
+                                  style={"color": "#111"})], md=3),
+            dbc.Col(html.Div(id="mta-source", className="text-secondary pt-4"),
+                    md=4, className="text-end"),
+        ], className="mb-3 g-3"),
         dbc.Row(id="mta-kpi", className="g-3 mb-3"),
         dbc.Row([
             dbc.Col(dbc.Card([
-                dbc.CardHeader("Contributo dei touchpoint (removal effect)"),
-                dbc.CardBody(dcc.Graph(id="fig-attr"))],
+                dbc.CardHeader("🏆 Importanza di ogni campagna (contributo reale "
+                               "alle conversioni)"),
+                dbc.CardBody([
+                    dcc.Graph(id="fig-attr"),
+                    html.P("Ogni barra è una campagna, colorata per canale: più è "
+                           "lunga, più la campagna è decisiva nel portare le "
+                           "persone alla conversione. Usa il filtro in alto per "
+                           "vedere un canale alla volta.", className=CAPTION)])],
                 className="border-secondary"), md=6),
             dbc.Col(dbc.Card([
-                dbc.CardHeader("Riparto del budget di canale tra le campagne"),
-                dbc.CardBody(dcc.Graph(id="fig-split"))],
+                dbc.CardHeader("💶 Come dividere il budget del canale tra le "
+                               "campagne"),
+                dbc.CardBody([
+                    dcc.Graph(id="fig-split"),
+                    html.P("Il budget di ogni canale (deciso nella pagina "
+                           "3 · Ottimizzazione) viene ripartito tra le sue "
+                           "campagne in proporzione alla loro importanza.",
+                           className=CAPTION)])],
                 className="border-secondary"), md=6),
         ], className="g-3 mb-3"),
-        dbc.Card([dbc.CardHeader("Piano tattico per campagna"),
+        dbc.Card([dbc.CardHeader("Piano per campagna (€/settimana)"),
                   dbc.CardBody(html.Div(id="mta-table"))],
                  className="border-secondary"),
+        html.Div(dbc.Button([html.I(className="bi bi-arrow-left me-2"),
+                             "Hai finito il giro: torna a 1 · Analisi"],
+                            href="/", color="info", outline=True),
+                 className="text-end mt-4"),
     ])
 
 
@@ -84,12 +108,17 @@ def _aggregates(contents=None, filename=None):
     return _cache["agg"], _cache["source"]
 
 
+def _channel_of(tp: str) -> str:
+    return tp.split(":", 1)[0] if ":" in tp else tp
+
+
 @callback(Output("mta-kpi", "children"), Output("fig-attr", "figure"),
           Output("fig-split", "figure"), Output("mta-table", "children"),
           Output("mta-source", "children"), Output("mta-feedback", "children"),
-          Input("mta-metric", "value"), Input("upload-mta", "contents"),
-          State("upload-mta", "filename"))
-def render(metric, contents, filename):
+          Output("mta-channel", "options"),
+          Input("mta-metric", "value"), Input("mta-channel", "value"),
+          Input("upload-mta", "contents"), State("upload-mta", "filename"))
+def render(metric, ch_filter, contents, filename):
     feedback = None
     try:
         agg, source = _aggregates(contents, filename)
@@ -105,50 +134,73 @@ def render(metric, contents, filename):
                               for ch in st["channels"]}
     split = mk.split_channel_budget(attr, plan)
 
-    unit = "€" if metric == "utility" else "conv."
+    tp_channels = sorted({_channel_of(tp) for tp in attr["touchpoint"]})
+    ch_options = ([{"label": "Tutti i canali", "value": "ALL"}]
+                  + [{"label": c, "value": c} for c in tp_channels])
+    color_of = {c: theme.COLORS[i % len(theme.COLORS)]
+                for i, c in enumerate(tp_channels)}
+    if ch_filter and ch_filter != "ALL" and ch_filter in tp_channels:
+        attr_view = attr[attr["touchpoint"].map(_channel_of) == ch_filter]
+        split_view = (split[split["canale"] == ch_filter]
+                      if not split.empty else split)
+    else:
+        attr_view, split_view = attr, split
+
+    unit = "€" if metric == "utility" else "conversioni"
     kpis = [
         dbc.Col(dbc.Card(dbc.CardBody([
             html.Div("Percorsi analizzati", className="text-secondary small"),
-            html.H4(f"{agg['n_paths']:,}")]), className="border-secondary"), md=3),
+            html.H4(f"{agg['n_paths']:,}"),
+            html.Small("sequenze di contatti utente", className="text-secondary"),
+        ]), className="border-secondary h-100"), md=3),
         dbc.Col(dbc.Card(dbc.CardBody([
             html.Div("Conversioni complete", className="text-secondary small"),
-            html.H4(f"{agg['total_conversions']:,}")]),
-            className="border-secondary"), md=3),
+            html.H4(f"{agg['total_conversions']:,}"),
+            html.Small("percorsi finiti in conversione",
+                       className="text-secondary"),
+        ]), className="border-secondary h-100"), md=3),
         dbc.Col(dbc.Card(dbc.CardBody([
-            html.Div("Utility totale", className="text-secondary small"),
-            html.H4(f"{agg['total_utility']:,.0f} €")]),
-            className="border-secondary"), md=3),
+            html.Div("Valore economico totale", className="text-secondary small"),
+            html.H4(f"{agg['total_utility']:,.0f} €"),
+            html.Small("generato dalle conversioni", className="text-secondary"),
+        ]), className="border-secondary h-100"), md=3),
         dbc.Col(dbc.Card(dbc.CardBody([
-            html.Div("P(conversione) del grafo", className="text-secondary small"),
-            html.H4(f"{attr.attrs['base_conversion_prob']:.2%}")]),
-            className="border-secondary"), md=3),
+            html.Div("Tasso di conversione medio", className="text-secondary small"),
+            html.H4(f"{attr.attrs['base_conversion_prob']:.2%}"),
+            html.Small("quota di percorsi che converte",
+                       className="text-secondary"),
+        ]), className="border-secondary h-100"), md=3),
     ]
 
-    top = attr.head(12).iloc[::-1]
-    f1 = go.Figure(go.Bar(x=top["attribuito"], y=top["touchpoint"],
-                          orientation="h", marker_color="#f72585"))
-    f1.update_layout(xaxis_title=f"valore attribuito ({unit})", height=420)
+    top = attr_view.head(12).iloc[::-1]
+    f1 = go.Figure(go.Bar(
+        x=top["attribuito"], y=top["touchpoint"], orientation="h",
+        marker_color=[color_of[_channel_of(tp)] for tp in top["touchpoint"]]))
+    f1.update_layout(xaxis_title=f"contributo reale ({unit})", height=420)
+    if attr_view.empty:
+        f1.add_annotation(text="Nessuna campagna per questo canale",
+                          showarrow=False, font=dict(color="#888"))
 
     f2 = go.Figure()
-    if not split.empty:
-        for i, (ch, grp) in enumerate(split.groupby("canale")):
+    if not split_view.empty:
+        for ch, grp in split_view.groupby("canale"):
             f2.add_bar(x=grp["campagna"].str.split(":").str[-1],
                        y=grp["budget_campagna"], name=ch,
-                       marker_color=theme.COLORS[i % len(theme.COLORS)])
+                       marker_color=color_of.get(ch, theme.COLORS[0]))
         f2.update_layout(yaxis_title="budget campagna (€/sett.)",
                          barmode="group", height=420)
     else:
         f2.add_annotation(text="Nessuna corrispondenza tra i canali del piano "
-                               "MMM e i touchpoint dei percorsi",
+                               "e le campagne dei percorsi",
                           showarrow=False, font=dict(color="#888"))
 
-    tbl = split.copy()
+    tbl = split_view.copy()
     if not tbl.empty:
         tbl["quota_intra_canale"] = (tbl["quota_intra_canale"] * 100).round(1)
         tbl["budget_campagna"] = tbl["budget_campagna"].round(0)
         tbl["attribuito"] = tbl["attribuito"].round(1)
-        tbl.columns = ["canale", "campagna", "quota %", "budget €/sett.",
-                       f"attribuito ({unit})"]
+        tbl.columns = ["canale", "campagna", "quota del canale %",
+                       "budget €/sett.", f"contributo reale ({unit})"]
         table = dash_table.DataTable(
             data=tbl.to_dict("records"),
             columns=[{"name": c, "id": c} for c in tbl.columns], **TBL_STYLE)
@@ -158,6 +210,7 @@ def render(metric, contents, filename):
     src = html.Small([html.I(className="bi bi-database me-1"), source,
                       "  ·  budget canale: ",
                       html.Em("piano ottimizzato" if st.get("plan")
-                              else "spesa media storica (ottimizza nella "
-                                   "pagina Prescrittiva)")])
-    return kpis, theme.dark(f1, 420), theme.dark(f2, 420), table, src, feedback
+                              else "spesa media storica (per il piano vai a "
+                                   "3 · Ottimizzazione)")])
+    return (kpis, theme.dark(f1, 420), theme.dark(f2, 420), table, src,
+            feedback, ch_options)
