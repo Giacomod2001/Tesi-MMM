@@ -150,13 +150,17 @@ def optimize(_, budget, rows):
     ch_su = max(delta_sp, key=delta_sp.get)
     soglia = 0.01 * float(budget)  # spostamenti sotto l'1% non si commentano
     if delta_sp[ch_su] > soglia and delta_sp[ch_giu] < -soglia:
-        _q_giu, lab_giu = saturazione(st["fit"]["channels"][ch_giu], cur[ch_giu])
-        _q_su, lab_su = saturazione(st["fit"]["channels"][ch_su], cur[ch_su])
+        _q_giu, _ = saturazione(st["fit"]["channels"][ch_giu], cur[ch_giu])
+        _q_su, _ = saturazione(st["fit"]["channels"][ch_su], cur[ch_su])
+        
+        motivo_giu = "è vicino alla saturazione" if _q_giu >= SAT_GIALLO else "ha rendimenti marginali inferiori"
+        motivo_su = "ha ancora ampio margine di crescita" if _q_su < SAT_VERDE else "offre un potenziale di resa migliore"
+
         pct = f" del {delta / prima:.0%}" if prima else ""
         spiegazione = [
             "Il modello suggerisce di spostare budget da ", html.B(ch_giu),
-            f" ({lab_giu}) verso ", html.B(ch_su),
-            f" (che {lab_su}), aumentando le candidature stimate{pct}."]
+            f" (che {motivo_giu}) verso ", html.B(ch_su),
+            f" (che {motivo_su}), aumentando le candidature stimate{pct}."]
     else:
         spiegazione = [
             "Il piano resta vicino al mix attuale: secondo il modello "
