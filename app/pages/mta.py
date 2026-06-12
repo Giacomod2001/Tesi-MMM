@@ -35,7 +35,7 @@ def layout():
                 id="upload-mta",
                 children=dbc.Button([html.I(className="bi bi-upload me-2"),
                                      "Carica percorsi (CSV)"],
-                                    outline=True, color="warning"),
+                                    outline=True, color="primary"),
                 multiple=False), md=4, className="text-end"),
         ], align="center"),
         html.P(["Livello 1 (MMM) decide quanto budget al canale; "
@@ -126,7 +126,7 @@ def render(metric, contents, filename):
 
     top = attr.head(12).iloc[::-1]
     f1 = go.Figure(go.Bar(x=top["attribuito"], y=top["touchpoint"],
-                          orientation="h", marker_color="#f72585"))
+                          orientation="h", marker_color=theme.ACCENT))
     f1.update_layout(xaxis_title=f"valore attribuito ({unit})", height=420)
 
     f2 = go.Figure()

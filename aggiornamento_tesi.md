@@ -1,3 +1,5 @@
+> **NOTA (12/06/2026): documento superato.** Questo materiale descriveva l'evoluzione intermedia del sistema (dashboard Dash, fit PyMC Empirical Bayes, livello tattico MTA a catene di Markov). La tesi ha adottato il pivot completo all'architettura Meridian geo-gerarchica con stage 2 a ROAS riscalati (vedi `tesi.md`, Capitoli 3-4, e `pipeline/`). Conservato come documentazione storica del prototipo (`mmm/`, `core/`, `app/`).
+
 # Aggiornamento tesi — evoluzione enterprise del sistema
 
 *Materiale teorico per l'integrazione dei capitoli. Tre temi: la migrazione dell'interfaccia a un paradigma asincrono (Dash), la rappresentazione dell'incertezza bayesiana come requisito decisionale, e l'architettura ibrida MMM + MTA a due livelli. Chiude una nota metodologica sull'Empirical Bayes e sull'agnosticismo dei dati.*

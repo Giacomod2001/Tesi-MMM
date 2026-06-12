@@ -9,3 +9,11 @@ mmm/output/*
 tesi.md
 deck_mmm.pptx
 .DS_Store
+
+# pipeline: dati generati/derivati (riproducibili con seed fisso)
+pipeline/data/raw/
+pipeline/data/canonical/
+pipeline/data/canonical_true/
+pipeline/data/output/
+pipeline/data/stress/
+pipeline/data/ground_truth.json

@@ -41,9 +41,8 @@ NAV = [("Descrittiva", "/", "bi-graph-up"),
 
 navbar = dbc.Navbar(
     dbc.Container([
-        dbc.NavbarBrand([html.Span("MMM", className="fw-bold text-info"),
-                         html.Span(" + "),
-                         html.Span("MTA", className="fw-bold text-warning"),
+        dbc.NavbarBrand([html.Span("MMM + MTA", className="fw-bold",
+                                    style={"color": "#3b82f6"}),
                          html.Span(" Decision Suite", className="ms-1")], href="/"),
         dbc.Nav([dbc.NavLink([html.I(className=f"bi {ic} me-1"), lab],
                              href=href, active="exact")

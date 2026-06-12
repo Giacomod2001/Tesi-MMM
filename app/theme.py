@@ -1,8 +1,11 @@
 """Tema scuro condiviso per i grafici Plotly."""
 import plotly.graph_objects as go
 
-COLORS = ["#4cc9f0", "#f72585", "#b5e48c", "#ffd166", "#9d4edd",
-          "#06d6a0", "#ef476f", "#a5a58d"]
+ACCENT = "#3b82f6"          # blu aziendale: UNICO colore interattivo
+COLORS = ["#3b82f6", "#93c5fd", "#64748b", "#cbd5e1",
+          "#2563eb", "#94a3b8", "#1d4ed8", "#e2e8f0"]   # famiglia blu/neutri
+DASHES = [None, "dash", "dot", "dashdot"]
+SEMANTIC = {"ok": "#22c55e", "warn": "#eab308", "bad": "#ef4444"}
 BG = "rgba(0,0,0,0)"
 GRID = "#2a2e3a"
 FONT = "#e8e9ed"

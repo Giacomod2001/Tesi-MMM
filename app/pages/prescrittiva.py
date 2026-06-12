@@ -45,7 +45,7 @@ def layout():
                            value=0.5, marks={.1: "±10%", .5: "±50%", 1: "libero"}),
             ], md=5),
             dbc.Col(dbc.Button([html.I(className="bi bi-magic me-2"),
-                                "Ottimizza"], id="btn-opt", color="info",
+                                "Ottimizza"], id="btn-opt", color="primary",
                                size="lg", className="mt-4"), md=2),
         ], className="g-3 mb-3"),
         dbc.Card([
@@ -91,15 +91,16 @@ def optimize(_, budget, max_change, rows):
     s = table.attrs["summary"]
 
     fig = go.Figure()
-    fig.add_bar(x=table["canale"], y=table["spesa_corrente"],
-                name="spesa attuale", marker_color="#5c677d")
-    fig.add_bar(x=table["canale"], y=table["spesa_ottimale"],
-                name="spesa ottimale", marker_color="#4cc9f0")
+    labels = [c.replace("_", " ").capitalize() for c in table["canale"]]
+    fig.add_bar(x=labels, y=table["spesa_corrente"],
+                name="spesa attuale", marker_color="#64748b")
+    fig.add_bar(x=labels, y=table["spesa_ottimale"],
+                name="spesa ottimale", marker_color=theme.ACCENT)
     fig.update_layout(barmode="group", yaxis_title="€/settimana")
 
     fig2 = go.Figure(go.Bar(
-        x=table["canale"], y=table["roas_marg_ottimale_x1000"],
-        marker_color="#ffd166", name="ROAS marginale post"))
+        x=labels, y=table["roas_marg_ottimale_x1000"],
+        marker_color="#93c5fd", name="ROAS marginale post"))
     fig2.add_hline(y=float(table["roas_marg_ottimale_x1000"].mean()),
                    line_dash="dot", line_color="#aaa",
                    annotation_text="rendimenti marginali pareggiati")
@@ -118,9 +119,12 @@ def optimize(_, budget, max_change, rows):
                         f"{s['candidature_ottimali']:,.0f} a settimana "
                         f"({s['efficiency_gain']:+.1%})", className="mb-1"),
                 html.Small("Raccomandazione del modello: valuta contratti e "
-                           "obiettivi di brand prima di applicarla. Il riparto "
-                           "per campagna e' nella pagina MTA.")],
-                color="info"), md=12),
+                           "obiettivi di brand prima di applicarla."),
+                html.Div(dbc.Button(["Riparti il budget tra le campagne ",
+                                     html.I(className="bi bi-arrow-right ms-1")],
+                                    href="/mta", color="primary", outline=True,
+                                    size="sm", className="mt-2"))],
+                color="dark", className="border border-secondary"), md=12),
         ]),
         dbc.Row([
             dbc.Col(dbc.Card([dbc.CardHeader("Attuale vs ottimale"),

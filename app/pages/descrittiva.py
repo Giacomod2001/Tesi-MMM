@@ -13,7 +13,7 @@ from app import store, theme
 dash.register_page(__name__, path="/", name="Descrittiva")
 
 
-def _kpi(label, value, sub="", color="info"):
+def _kpi(label, value, sub="", color="light"):
     return dbc.Card(dbc.CardBody([
         html.Div(label, className="text-secondary small"),
         html.H3(value, className=f"text-{color} mb-0"),
@@ -28,7 +28,7 @@ def layout():
             dbc.Col(dcc.Upload(
                 id="upload-mmm",
                 children=dbc.Button([html.I(className="bi bi-upload me-2"),
-                                     "Carica il tuo CSV"], outline=True, color="info"),
+                                     "Carica il tuo CSV"], outline=True, color="primary"),
                 multiple=False), md=4, className="text-end"),
         ], align="center"),
         html.P("Cosa e' successo: spesa per leva, risultati e fattori esterni. "
@@ -100,7 +100,7 @@ def render(contents, filename):
         f1.add_scatter(x=df["week"], y=df[f"spend_{c}"], name=c, mode="lines")
     f2 = go.Figure(go.Scatter(x=df["week"], y=df["applications"],
                               mode="lines", name="KPI",
-                              line=dict(color="#4cc9f0", width=2)))
+                              line=dict(color=theme.ACCENT, width=2)))
     f3 = go.Figure()
     ctrl = [c for c in df.columns if c.startswith("ctrl_")]
     for c in ctrl:

@@ -1,0 +1,8 @@
+# Pipeline MMM + Budget Allocator (Python >= 3.10)
+google-meridian>=1.6        # MMM bayesiano geo-gerarchico (TF incluso)
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+openpyxl>=3.1               # Excel in ingestion/generator
+pdfplumber>=0.10            # tabelle PDF in ingestion
+pytest>=7.0                 # test
