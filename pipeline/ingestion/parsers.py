@@ -148,7 +148,13 @@ def coerce_date(s: pd.Series) -> pd.Series:
     i formati esotici ('gen 2024', '2024-01')."""
     if pd.api.types.is_datetime64_any_dtype(s):
         return pd.to_datetime(s)
-    d = pd.to_datetime(s, dayfirst=True, errors="coerce", format="mixed")
+    # 1) ISO stretto per primo: evita che dayfirst trasformi '2024-02-12'
+    #    in 2 dicembre (pandas >= 3 inferisce %Y-%d-%m su date ambigue)
+    d = pd.to_datetime(s, format="%Y-%m-%d", errors="coerce")
+    rest = d.isna() & s.notna()
+    if rest.any():
+        d.loc[rest] = pd.to_datetime(s[rest], dayfirst=True,
+                                     errors="coerce", format="mixed")
     hard = d.isna() & s.notna()
     if hard.any():
         def conv(v):

@@ -86,6 +86,14 @@ def test_coerce_date_misti():
     assert d[2] == pd.Timestamp("2024-01-15")
 
 
+def test_coerce_date_iso_ambigua_non_scambia_giorno_mese():
+    # regressione: con pandas >= 3 il dayfirst inferiva %Y-%d-%m
+    s = pd.Series(["2024-01-01", "2024-02-12", "2024-06-03"])
+    d = parsers.coerce_date(s)
+    assert d[1] == pd.Timestamp("2024-02-12")   # 12 febbraio, NON 2 dicembre
+    assert d[2] == pd.Timestamp("2024-06-03")
+
+
 # ------------------------------------------------------------------ generator
 def test_generator_fatti_canonici_validi(world_small):
     p = world_small["panel"]
