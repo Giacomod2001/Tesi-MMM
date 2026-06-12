@@ -105,7 +105,7 @@ def standardize(df: pd.DataFrame, schema: dict | None = None) -> tuple[pd.DataFr
     for c in schema["controls"]:
         name = re.sub(r"\W+", "_", str(c)).strip("_").lower()
         out[f"ctrl_{name}"] = pd.to_numeric(df[c], errors="coerce")
-    out = out.dropna(subset=["applications"]).reset_index(drop=True)
+    out = out.dropna(subset=["applications"]).sort_values("week").reset_index(drop=True)
     schema["channels_clean"] = channels
     return out, schema
 
@@ -118,7 +118,7 @@ def default_constraints(df_std: pd.DataFrame, channels: list[str]) -> dict:
         s = df_std[f"spend_{ch}"]
         active = s[s > 0.05 * s.mean()] if s.mean() > 0 else s
         cons[ch] = {
-            "min": round(0.25 * float(active.min())) if len(active) else 0.0,
+            "min": round(0.5 * float(s.mean())) if s.mean() > 0 else 0.0,
             "max": round(2.0 * float(s.max())),
             "mean": float(s.mean()),
         }

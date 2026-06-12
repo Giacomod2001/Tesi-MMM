@@ -2,12 +2,9 @@ numpy
 pandas
 scipy
 plotly
-dash
-dash-bootstrap-components
-diskcache
 multiprocess
 psutil
-streamlit
 openpyxl
 pdfplumber
-gunicorn
+pymc>=5
+arviz

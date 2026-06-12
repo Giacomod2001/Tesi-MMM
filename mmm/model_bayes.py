@@ -26,7 +26,7 @@ import os
 import numpy as np
 import pandas as pd
 
-import config
+from mmm import config
 
 L_ADSTOCK = 12          # troncamento dell'adstock (settimane)
 DRAWS, TUNE, CHAINS = 500, 500, 2

@@ -1,42 +1,27 @@
-# MMM + MTA Decision Suite
+# Marketing Mix Modeling (MMM) - Modello Matematico
 
-Sistema di supporto decisionale per il budget del recruiting digitale:
-**MMM** (livello strategico, allocazione inter-canale) + **MTA** con catene
-di Markov (livello tattico, riparto intra-canale per campagna).
-Dati sintetici — caso di studio, tesi magistrale IULM.
+Repository per la tesi magistrale di Giacomo.
+Il progetto implementa un modello matematico puro per il Marketing Mix Modeling (MMM), con stima frequentista, inferenza Bayesiana tramite PyMC e ottimizzazione del budget tramite `scipy.optimize`.
 
-## Avvio rapido
+## Come utilizzare il modello
 
+Questo progetto è progettato per essere eseguito da riga di comando, puro backend.
+
+### 1. Installazione
+Assicurati di avere Python installato. Clona la repository e installa le dipendenze:
 ```bash
 pip install -r requirements.txt
-python -m app.main          # dashboard Dash (tema scuro) su http://127.0.0.1:8050
 ```
 
-Fit bayesiano: si lancia dall'interfaccia (pagina Predittiva, background
-callback) oppure offline. Richiede `pip install -r requirements-bayes.txt`.
-
-## Architettura
-
-- `app/` — dashboard Dash multi-pagina: Descrittiva / Predittiva /
-  Prescrittiva / MTA. Background callback (diskcache) per il fit bayesiano.
-- `core/` — logica agnostica (zero nomi hardcodati):
-  - `schema.py` — auto-detect di date, spese, KPI e controlli in CSV arbitrari;
-    vincoli ottimizzatore derivati dallo storico
-  - `mmm_bayes.py` — fit bayesiano PyMC con prior **Empirical Bayes**
-    (ancorati al fit frequentista o alle scale del dataset; invariante alle
-    unita' di misura)
-  - `mta_markov.py` — attribution Markov (removal effect), metriche volume /
-    utility, riparto tattico del budget di canale tra le campagne
-  - `datagen_mta.py` — generatore di ~800k percorsi utente sintetici
-    (funnel a 3 stadi, demografia, utility per categoria)
-- `mmm/` — pipeline MMM originale (fit frequentista scipy, allocator
-  multi-periodo, ingestione Excel/CSV/PDF, app Streamlit legacy, test)
-- `data/` — percorsi MTA (campione + aggregati di transizione + completo
-  compresso), posterior bayesiane pre-calcolate
-
-## Test e riproducibilita'
-
+### 2. Esecuzione
+Per avviare l'intera pipeline logica (generazione dati, fit frequentista, fit Bayesiano e ottimizzazione budget), esegui:
 ```bash
-cd mmm && python run_pipeline.py && python test_locale.py
-python core/datagen_mta.py     # rigenera gli 800k percorsi (seed fisso)
+python main.py
 ```
+Lo script stamperà a schermo le curve di efficienza, l'incertezza Bayesiana calcolata e la ripartizione ottimale del budget.
+
+## Struttura del Codice Logico
+- `mmm/data_generator.py`: Simula un dataset aziendale con logiche di Adstock e Saturazione.
+- `core/model.py`: Risolutore Frequentista per trovare i parametri $\beta$, $\lambda$, e $K$ che minimizzano l'errore quadratico medio.
+- `core/mmm_bayes.py`: Motore di Inferenza Bayesiana (Markov Chain Monte Carlo) per calcolare gli intervalli di confidenza HDI al 90%.
+- `mmm/allocator.py`: Ottimizzatore non lineare per la massimizzazione del ROI marginale (ROAS) con vincoli di budget.
