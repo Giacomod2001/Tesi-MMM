@@ -33,14 +33,13 @@ OPZIONI_KIND = ["media", "demand", "seasonality", "individual"]
 OPZIONI_CANALE = ["—", "google", "meta", "linkedin", "indeed"]
 
 KIND_LABEL = {
-    "media": "📊 Spesa media (Google/Meta/LinkedIn/Indeed)",
-    "demand": "📈 Domanda / serie esterna",
-    "seasonality": "🗓️ Stagionalità",
-    "individual": "👤 Candidature individuali (CRM, dati personali)",
+    "media": "Spesa media (Google/Meta/LinkedIn/Indeed)",
+    "demand": "Domanda / serie esterna",
+    "seasonality": "Stagionalità",
+    "individual": "Candidature individuali (CRM, dati personali)",
 }
 
-st.set_page_config(page_title="Ingestion MMM — Randstad", page_icon="📥",
-                   layout="wide")
+st.set_page_config(page_title="Ingestion MMM — Randstad", layout="wide")
 
 
 # --------------------------------------------------------------- helper
@@ -61,7 +60,7 @@ def salva_upload(files, svuota: bool) -> int:
 
 
 def df_da_plan(sm: mapping.SourceMap) -> pd.DataFrame:
-    """Tabella editabile colonna-export → campo-canonico per un file."""
+    """Tabella editabile colonna-export -> campo-canonico per un file."""
     righe = [{"colonna nel file": c.source,
               "campo canonico": c.field,
               "confidenza": round(c.confidence, 2)} for c in sm.columns]
@@ -69,10 +68,47 @@ def df_da_plan(sm: mapping.SourceMap) -> pd.DataFrame:
                                         "campo canonico", "confidenza"])
 
 
+def desktop_dir() -> str:
+    """Trova il Desktop in modo robusto (anche se redirezionato su OneDrive)."""
+    home = os.path.expanduser("~")
+    if os.name == "nt":
+        try:
+            import winreg
+            with winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER,
+                    r"Software\Microsoft\Windows\CurrentVersion\Explorer"
+                    r"\Shell Folders") as k:
+                p = os.path.expandvars(winreg.QueryValueEx(k, "Desktop")[0])
+                if os.path.isdir(p):
+                    return p
+        except OSError:
+            pass
+    cand = os.path.join(home, "Desktop")
+    return cand if os.path.isdir(cand) else home
+
+
+def salva_csv(facts: dict, folder: str) -> list[str]:
+    """Scrive i fatti canonici come CSV nella cartella indicata."""
+    os.makedirs(folder, exist_ok=True)
+    scritti = []
+    for name, df in facts.items():
+        p = os.path.join(folder, f"{name}.csv")
+        df.to_csv(p, index=False)
+        scritti.append(p)
+    return scritti
+
+
 # --------------------------------------------------------------- intestazione
-st.title("📥 Caricamento dati — Marketing Mix Modeling")
+st.title("Caricamento dati — Marketing Mix Modeling")
 st.caption("Carica gli export di Google Ads, Meta, LinkedIn, Indeed e CRM. "
            "Il sistema propone come leggere le colonne: tu controlli e confermi.")
+
+with st.sidebar:
+    st.subheader("Dove salvare i risultati")
+    st.text_input("Cartella di output (sul Desktop)",
+                  value=os.path.join(desktop_dir(), "MMM_dati_puliti"),
+                  key="out_dir")
+    st.caption("Dopo l'ingestion i 4 CSV puliti finiscono qui.")
 
 # =============================================================== STEP 1 — upload
 st.header("1 · Carica i file")
@@ -85,10 +121,10 @@ with col_u:
 with col_o:
     svuota = st.checkbox("Sostituisci i file precedenti", value=True,
                          help="Svuota la cartella prima di caricare i nuovi file.")
-    st.caption("💡 Metti il canale nel nome del file "
+    st.caption("Metti il canale nel nome del file "
                "(es. `google_ads.csv`) per il riconoscimento automatico.")
 
-if st.button("🔎 Analizza i file", type="primary", disabled=not files):
+if st.button("Analizza i file", type="primary", disabled=not files):
     n = salva_upload(files, svuota)
     plans, tables = build.propose_plan(config.RAW_DIR)
     st.session_state.plans = plans
@@ -101,16 +137,16 @@ if st.button("🔎 Analizza i file", type="primary", disabled=not files):
 if st.session_state.get("plans"):
     st.header("2 · Controlla e conferma la mappatura")
     st.caption("Per ogni file: verifica tipo, canale e l'abbinamento "
-               "colonne → campi. Correggi col menù a tendina se serve.")
+               "colonne -> campi. Correggi col menù a tendina se serve.")
 
     edited: dict[str, dict] = {}
     for sm in st.session_state.plans:
         f = sm.file
-        with st.expander(f"📄 {f}  ·  {KIND_LABEL.get(sm.kind, sm.kind)}"
+        with st.expander(f"{f}  ·  {KIND_LABEL.get(sm.kind, sm.kind)}"
                          + (f"  ·  canale: {sm.channel}" if sm.channel else ""),
                          expanded=True):
             for nota in sm.notes:
-                st.warning("⚠️ " + nota)
+                st.warning(nota)
 
             c1, c2, c3 = st.columns([2, 2, 1])
             kind = c1.selectbox(
@@ -121,7 +157,7 @@ if st.session_state.get("plans"):
             chan_idx = OPZIONI_CANALE.index(sm.channel) if sm.channel in OPZIONI_CANALE else 0
             channel = c2.selectbox("Canale (solo per spesa media)",
                                    OPZIONI_CANALE, index=chan_idx, key=f"chan_{f}")
-            confermato = c3.checkbox("✅ Confermo", value=True, key=f"conf_{f}")
+            confermato = c3.checkbox("Confermo", value=True, key=f"conf_{f}")
 
             tab = st.data_editor(
                 df_da_plan(sm), key=f"editor_{f}", hide_index=True,
@@ -136,7 +172,7 @@ if st.session_state.get("plans"):
                         help="Quanto è sicuro il riconoscimento automatico."),
                 })
 
-            with st.popover("👀 Anteprima dati grezzi"):
+            with st.popover("Anteprima dati grezzi"):
                 st.dataframe(st.session_state.tables[f].head(8),
                              width="stretch")
 
@@ -145,7 +181,7 @@ if st.session_state.get("plans"):
 
     # ----------------------------------------------------------- esecuzione
     st.divider()
-    if st.button("🚀 Esegui l'ingestion", type="primary"):
+    if st.button("Esegui l'ingestion", type="primary"):
         # ricostruisci i SourceMap dalle modifiche dell'utente
         for sm in st.session_state.plans:
             e = edited[sm.file]
@@ -161,13 +197,20 @@ if st.session_state.get("plans"):
 
         confermati = [p for p in st.session_state.plans if p.confirmed]
         if not confermati:
-            st.error("Nessun file confermato: spunta almeno un «✅ Confermo».")
+            st.error("Nessun file confermato: spunta almeno un «Confermo».")
         else:
             try:
                 res = build.ingest(raw_dir=config.RAW_DIR,
                                    plan=st.session_state.plans,
                                    interactive=False,
                                    tables=st.session_state.tables)
+                try:
+                    salva_csv(res["facts"], st.session_state.out_dir)
+                    res["out_dir"] = st.session_state.out_dir
+                except OSError as e:
+                    res["out_dir"] = None
+                    st.warning(f"Ingestion ok, ma non ho potuto salvare "
+                               f"nella cartella scelta: {e}")
                 st.session_state.result = res
             except Exception as exc:  # noqa: BLE001 — mostra l'errore all'utente
                 st.session_state.result = None
@@ -179,7 +222,7 @@ if res:
     st.header("3 · Risultato")
     st.success("Ingestion completata. I fatti canonici sono pronti per il modello.")
 
-    with st.expander("📋 Log e validazione", expanded=False):
+    with st.expander("Log e validazione", expanded=False):
         for line in res["log"]:
             st.text(line)
 
@@ -189,9 +232,15 @@ if res:
         with tab:
             st.dataframe(df.head(200), width="stretch")
             st.download_button(
-                f"⬇️ Scarica {name}.csv",
+                f"Scarica {name}.csv",
                 df.to_csv(index=False).encode("utf-8"),
                 file_name=f"{name}.csv", mime="text/csv", key=f"dl_{name}")
 
-    st.info(f"I file canonici sono stati salvati anche in `{config.CANON_DIR}`. "
-            "Prossimo passo: fit del modello (`python -m pipeline.model.run`).")
+    if res.get("out_dir"):
+        st.success("I 4 CSV puliti sono stati salvati sul tuo Desktop in:\n\n"
+                   f"`{res['out_dir']}`")
+        if os.name == "nt" and st.button("Apri la cartella"):
+            os.startfile(res["out_dir"])  # noqa: S606 — app locale desktop
+    st.caption(f"(Copia anche in `{config.CANON_DIR}` per la pipeline.)")
+    st.info("Prossimo passo: carica questi 4 CSV su Colab per il fit del "
+            "modello (notebook fit-only).")
