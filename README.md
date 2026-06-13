@@ -73,11 +73,19 @@ motore di ingestion:
 ```bash
 streamlit run app_ingestion.py
 ```
-Carichi i file, controlli la mappatura proposta in tabella, confermi: i
-fatti canonici sono pronti per il fit.
+Carichi i file, controlli la mappatura proposta in tabella, confermi: l'app
+salva i 4 CSV canonici (media, demand, seasonality, outcome) in una cartella
+sul Desktop, pronti per il fit.
+
+### Dove gira il fit (Colab, GPU)
+Il fit Meridian richiede una GPU, quindi gira su Colab. Due notebook, per due
+scopi diversi:
+- [`colab_fit.ipynb`](colab_fit.ipynb) — **fit-only**: carichi i 4 CSV
+  prodotti dall'app, poi fit + allocazione + download dei risultati. È il
+  seguito naturale dell'app web (flusso consigliato per la consegna).
+- [`colab_pipeline_mmm.ipynb`](colab_pipeline_mmm.ipynb) — l'intera pipeline
+  su Colab con **dati sintetici** generati lì (dimostrazione di tesi); NON
+  usa i CSV dell'app.
 
 Per i dettagli (schema canonico, GDPR, consegna su dati reali Randstad) vedi
 [`pipeline/README.md`](pipeline/README.md).
-
-Il notebook [`colab_pipeline_mmm.ipynb`](colab_pipeline_mmm.ipynb) replica il
-fit su Colab (GPU) quando il modello Meridian è troppo lento in locale.
