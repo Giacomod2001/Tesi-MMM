@@ -5,6 +5,9 @@ pubblicitaria su Google, Meta, LinkedIn e Indeed. Caso applicativo: Randstad
 Italia. Il modello stima il ritorno (ROI/ROAS) di ogni canale su un panel
 regione × settimana e propone la ripartizione ottimale del budget trimestrale.
 
+> Descrizione discorsiva di architettura, componenti e scelte modellistiche
+> (pensata per la stesura della tesi): [`ARCHITETTURA.md`](ARCHITETTURA.md).
+
 ---
 
 ## Idea in breve
