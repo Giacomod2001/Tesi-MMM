@@ -4,7 +4,6 @@ Output unico in Excel: un solo workbook con tutti i risultati finali.
 Ogni stage della pipeline scrive il proprio foglio nello stesso file
 `pipeline/data/output/risultati.xlsx` invece di un CSV separato:
 
-    Ottimizzazione   main.py (demo MMM frequentista)
     Canali           allocator stage 1 (quarter per canale)
     Settimane        allocator: spaccato settimanale
     Mesi             allocator: rollup mensile

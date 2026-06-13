@@ -88,10 +88,3 @@ La pipeline è identica: cambiano solo i file in ingresso.
 - `validation/recovery.py` confronta ROI e adstock con la verità e le
   curve di risposta nel range osservato (la metrica che conta per
   l'allocator).
-
-## Moduli legacy (prototipo tesi, capitoli 4-5)
-
-`mmm/` (fit frequentista + PyMC nazionale, app Streamlit), `core/` e
-`app/` (dashboard Dash, MTA Markov) restano nel repo come materiale dei
-capitoli precedenti: documentano l'evoluzione del sistema, ma la
-pipeline di consegna è questa.

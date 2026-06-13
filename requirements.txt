@@ -1,10 +1,7 @@
-numpy
-pandas
-scipy
-plotly
-multiprocess
-psutil
-openpyxl
-pdfplumber
-pymc>=5
-arviz>=1.0
+# Dipendenze per l'app di ingestion in LOCALE (app_ingestion.py).
+# Il fit Meridian gira su Colab: vedi pipeline/requirements.txt.
+streamlit>=1.30
+pandas>=2.0
+numpy>=1.24
+openpyxl>=3.1
+pdfplumber>=0.10
