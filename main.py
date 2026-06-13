@@ -5,6 +5,7 @@ from mmm.data_generator import generate
 from mmm import model
 from core import mmm_bayes
 from mmm import allocator
+from results_xlsx import write_sheet, WORKBOOK, MONEY
 
 TOTAL_WEEKLY_BUDGET = sum(MEAN_WEEKLY_SPEND.values())
 
@@ -36,13 +37,15 @@ def main():
     # Usiamo i risultati frequentisti per l'ottimizzazione (o bayesiani se si preferisce)
     current_spend = {ch: float(df[f"spend_{ch}"].mean()) for ch in channels}
     plan_df = allocator.optimize_budget(res_freq["channels"], current_spend=current_spend, total_budget=TOTAL_WEEKLY_BUDGET)
-    print(f"Budget totale settimanale: {TOTAL_WEEKLY_BUDGET} €")
+    print(f"Budget totale settimanale: {TOTAL_WEEKLY_BUDGET} EUR")
     print("Ripartizione ottimale suggerita:")
     print(plan_df[["canale", "spesa_ottimale", "variazione_pct"]].to_string(index=False))
     print(f"Candidature totali stimate post-ottimizzazione: {plan_df.attrs['summary']['candidature_ottimali']:.0f}")
 
-    plan_df.to_csv("output_ottimizzazione.csv", index=False)
-    print("\n[+] Risultati dell'ottimizzazione salvati in 'output_ottimizzazione.csv'")
+    write_sheet("Ottimizzazione", plan_df.round(2),
+                {"spesa_ottimale": MONEY, "spesa_attuale": MONEY,
+                 "variazione_pct": "0.0%"})
+    print("\n[+] Foglio Ottimizzazione aggiornato in", WORKBOOK)
 
     print("\n--- PIPELINE COMPLETATA CON SUCCESSO ---")
 

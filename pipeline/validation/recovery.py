@@ -24,6 +24,7 @@ import pandas as pd
 
 from .. import config
 from ..allocator import quarter as Q
+from results_xlsx import write_sheet, WORKBOOK
 
 
 def load(fit_path: str | None = None,
@@ -116,11 +117,14 @@ def main() -> None:
     print(crv.round(3).to_string(index=False))
 
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
-    out = os.path.join(config.OUTPUT_DIR, "parameter_recovery.csv")
-    pd.concat([roi.assign(metric="roi"),
-               ads.assign(metric="adstock") if len(ads) else None,
-               crv.assign(metric="curve")]).to_csv(out, index=False)
-    print(f"\nSalvato: {out}")
+    recovery = pd.concat([roi.assign(metric="roi"),
+                          ads.assign(metric="adstock") if len(ads) else None,
+                          crv.assign(metric="curve")])
+    write_sheet("Recovery", recovery.round(4),
+                {"roi_true": "0.00", "roi_q05": "0.00", "roi_q50": "0.00",
+                 "roi_q95": "0.00", "rel_error": "0.0%",
+                 "curve_mae_pct": "0.0%"})
+    print(f"\nFoglio 'Recovery' aggiornato in {WORKBOOK}")
 
 
 if __name__ == "__main__":

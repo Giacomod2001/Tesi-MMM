@@ -23,6 +23,7 @@ from .. import config
 from . import campaigns as C2
 from . import quarter as Q
 from . import schedule as SC
+from results_xlsx import write_sheet, WORKBOOK, MONEY
 
 
 def _parse_kv(items: list[str] | None) -> dict[str, float]:
@@ -31,6 +32,23 @@ def _parse_kv(items: list[str] | None) -> dict[str, float]:
         k, _, v = it.partition("=")
         out[k.strip()] = float(v)
     return out
+
+
+def _write_excel(alloc, plan, monthly, camp) -> None:
+    """Scrive i quattro fogli dell'allocator nel workbook unico
+    (Canali / Settimane / Mesi / Campagne), con formato valuta."""
+    write_sheet("Canali", alloc.round(2),
+                {"budget_quarter": MONEY, "weekly_spend": MONEY,
+                 "hist_weekly_spend": MONEY, "expected_weekly_revenue": MONEY,
+                 "constraint_min": MONEY, "constraint_max": MONEY,
+                 "delta_pct": "0.0%", "marginal_roi": "0.00"})
+    write_sheet("Settimane", plan.round(2), {"spend": MONEY})
+    write_sheet("Mesi", monthly.round(0), {"spend": MONEY})
+    write_sheet("Campagne", camp.round(3),
+                {"spend": MONEY, "budget_proposed": MONEY,
+                 "share_hist": "0.0%", "share_proposed": "0.0%",
+                 "platform_roas": "0.00", "roas_adjusted": "0.00",
+                 "k_channel": "0.00"})
 
 
 def main() -> None:
@@ -96,15 +114,8 @@ def main() -> None:
     print(camp.round(3).to_string(index=False))
 
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
-    alloc.to_csv(os.path.join(config.OUTPUT_DIR, "allocation_channels.csv"),
-                 index=False)
-    plan.to_csv(os.path.join(config.OUTPUT_DIR, "allocation_weekly.csv"),
-                index=False)
-    monthly.to_csv(os.path.join(config.OUTPUT_DIR, "allocation_monthly.csv"),
-                   index=False)
-    camp.to_csv(os.path.join(config.OUTPUT_DIR, "allocation_campaigns.csv"),
-                index=False)
-    print(f"\nOutput salvati in {config.OUTPUT_DIR}")
+    _write_excel(alloc, plan, monthly, camp)
+    print(f"\nFogli Canali/Settimane/Mesi/Campagne aggiornati in {WORKBOOK}")
     print("NB: è una raccomandazione — la validazione finale spetta al "
           "manager (human-in-the-middle).")
 

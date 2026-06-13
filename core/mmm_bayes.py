@@ -126,12 +126,12 @@ def fit_bayes(df: pd.DataFrame, channels: list[str],
                           target_accept=0.9, random_seed=seed,
                           progressbar=False)
 
-    summ = az.summary(idata, hdi_prob=0.90)
+    summ = az.summary(idata, ci_prob=0.90, ci_kind="hdi")
     summary = {i: {"mean": float(r["mean"]), "sd": float(r["sd"]),
-                   "hdi_5%": float(r["hdi_5%"]), "hdi_95%": float(r["hdi_95%"]),
+                   "hdi_5%": float(r["hdi90_lb"]), "hdi_95%": float(r["hdi90_ub"]),
                    "r_hat": float(r["r_hat"])} for i, r in summ.iterrows()}
 
-    post = idata.posterior.stack(sample=("chain", "draw"))
+    post = idata.posterior.to_dataset().stack(sample=("chain", "draw"))
     take = np.linspace(0, post.sizes["sample"] - 1, 300).astype(int)
     curves = {}
     for ch in channels:

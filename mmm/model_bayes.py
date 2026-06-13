@@ -102,10 +102,10 @@ def main():
     os.makedirs(os.path.join(here, "output"), exist_ok=True)
 
     # --- 1) sintesi dei parametri -------------------------------------------
-    summ = az.summary(idata, hdi_prob=0.90)
+    summ = az.summary(idata, ci_prob=0.90, ci_kind="hdi")
     summary = {
         idx: {"mean": float(r["mean"]), "sd": float(r["sd"]),
-              "hdi_5%": float(r["hdi_5%"]), "hdi_95%": float(r["hdi_95%"]),
+              "hdi_5%": float(r["hdi90_lb"]), "hdi_95%": float(r["hdi90_ub"]),
               "r_hat": float(r["r_hat"])}
         for idx, r in summ.iterrows()
     }
@@ -113,7 +113,7 @@ def main():
         json.dump(summary, f, indent=2)
 
     # --- 2) curve di risposta a regime con banda 90% --------------------------
-    post = idata.posterior.stack(sample=("chain", "draw"))
+    post = idata.posterior.to_dataset().stack(sample=("chain", "draw"))
     n_samp = post.sizes["sample"]
     take = np.linspace(0, n_samp - 1, min(300, n_samp)).astype(int)
     curves = {}
