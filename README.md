@@ -67,6 +67,15 @@ python -m pipeline.allocator.run --budget 450000 \
 python -m pytest pipeline/tests -q      # test
 ```
 
+### Caricamento dati senza terminale (app web)
+Per l'operatore Randstad c'è un'interfaccia drag-and-drop sopra lo stesso
+motore di ingestion:
+```bash
+streamlit run app_ingestion.py
+```
+Carichi i file, controlli la mappatura proposta in tabella, confermi: i
+fatti canonici sono pronti per il fit.
+
 Per i dettagli (schema canonico, GDPR, consegna su dati reali Randstad) vedi
 [`pipeline/README.md`](pipeline/README.md).
 

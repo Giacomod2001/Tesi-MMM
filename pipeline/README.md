@@ -43,6 +43,19 @@ python -m pipeline.allocator.run --budget 450000 \
 python -m pytest pipeline/tests -q
 ```
 
+## App web di ingestion (consigliata per l'operatore)
+
+Per chi non usa il terminale c'è un'interfaccia drag-and-drop che avvolge
+lo stesso motore (`build.propose_plan` / `build.ingest`):
+
+```bash
+streamlit run app_ingestion.py
+```
+
+Flusso: **carica i file → controlla la mappatura proposta in tabella →
+conferma → l'ingestion gira e produce i fatti canonici** (con download
+CSV). La conferma human-in-the-middle è la stessa della CLI, solo a video.
+
 ## Consegna a Randstad (dati reali)
 
 La pipeline è identica: cambiano solo i file in ingresso.
@@ -50,10 +63,10 @@ La pipeline è identica: cambiano solo i file in ingresso.
 1. Depositare gli export reali in `pipeline/data/raw/` (CSV/XLSX/PDF:
    Meta, Google Ads + report Geografia, LinkedIn, Indeed, estrazione CRM
    delle candidature, serie di domanda, indici stagionali).
-2. `python -m pipeline.ingestion.run` → il sistema propone la mappatura
-   colonne→schema canonico; **l'operatore conferma o corregge** (il punto
-   human-in-the-middle non è aggirabile). La mappatura confermata viene
-   salvata e riusata.
+2. `python -m pipeline.ingestion.run` (oppure l'**app web** qui sopra) → il
+   sistema propone la mappatura colonne→schema canonico; **l'operatore
+   conferma o corregge** (il punto human-in-the-middle non è aggirabile).
+   La mappatura confermata viene salvata e riusata.
 3. I dati individuali vengono **pseudonimizzati** (SHA-256 con sale) e
    aggregati a regione × settimana prima di qualsiasi analisi (GDPR).
 4. Fit (`model.run`) e allocazione (`allocator.run`) come sopra. I moduli
