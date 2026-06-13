@@ -1,0 +1,13 @@
+# Normalizza i fine-riga: nella storia sempre LF, in checkout adattati all'OS
+* text=auto
+
+# File binari: Git non deve toccarli
+*.gz binary
+*.zip binary
+*.pptx binary
+*.xlsx binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
