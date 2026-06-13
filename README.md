@@ -77,15 +77,41 @@ Carichi i file, controlli la mappatura proposta in tabella, confermi: l'app
 salva i 4 CSV canonici (media, demand, seasonality, outcome) in una cartella
 sul Desktop, pronti per il fit.
 
-### Dove gira il fit (Colab, GPU)
-Il fit Meridian richiede una GPU, quindi gira su Colab. Due notebook, per due
-scopi diversi:
-- [`colab_fit.ipynb`](colab_fit.ipynb) — **fit-only**: carichi i 4 CSV
-  prodotti dall'app, poi fit + allocazione + download dei risultati. È il
-  seguito naturale dell'app web (flusso consigliato per la consegna).
-- [`colab_pipeline_mmm.ipynb`](colab_pipeline_mmm.ipynb) — l'intera pipeline
-  su Colab con **dati sintetici** generati lì (dimostrazione di tesi); NON
-  usa i CSV dell'app.
+### Due usi della pipeline: dimostrazione vs produzione
+Lo stesso identico modello serve a due scopi. Cambia solo se i dati sono
+finti (per dimostrare che il metodo funziona) o veri (per decidere).
+
+| | DIMOSTRAZIONE (tesi) | PRODUZIONE (Randstad) |
+|---|---|---|
+| 1. Dati | `generator.run`: dati sintetici **+ ground_truth.json** (la verità nota) | export reali di Randstad (niente generazione) |
+| 2. Ingestion | `app_ingestion.py` (o `ingestion.run`) | identica |
+| 3. Colab | [`colab_test.ipynb`](colab_test.ipynb): fit **+ parameter recovery** | [`colab_fit.ipynb`](colab_fit.ipynb): fit **+ allocazione budget** |
+| Risultato | il modello ritrova la verità → il metodo funziona | raccomandazione di budget |
+
+Il fit Meridian richiede una GPU, quindi gira su Colab in entrambi i casi.
+La differenza è solo il passo di verifica: nella demo c'è (si confronta con
+la verità nota), in produzione no (sui dati reali la verità non esiste — è
+proprio ciò che il modello stima).
+
+### Come dimostriamo che il modello funziona (parameter recovery)
+La validazione segue tre azioni distinte:
+1. **Creare** dati finti di cui si conosce la "verità" (ROI, adstock reali) —
+   `pipeline/generator/` con `numpy`.
+2. **Stimare** il modello da quei dati — il fit Meridian (`pipeline/model/`).
+3. **Verificare** se le stime coincidono con la verità — `validation/recovery`,
+   che riporta ROI stimato vs vero, copertura al 90% e errore sulle curve.
+
+Il passo 3 è possibile **solo** con dati finti, perché solo lì la risposta
+giusta è nota in anticipo. È questo che dimostra empiricamente la bontà del
+modello prima di applicarlo ai dati reali.
+
+> Nota: PyMC e Meridian sono motori di **stima** (azione 2), non generano
+> dati; la generazione (azione 1) usa `numpy`. Il prototipo A usa PyMC, la
+> pipeline B usa Meridian.
+
+> In alternativa, [`colab_pipeline_mmm.ipynb`](colab_pipeline_mmm.ipynb) fa
+> l'intera dimostrazione tutta-in-uno su Colab (genera i dati lì, senza
+> passare dall'app).
 
 Per i dettagli (schema canonico, GDPR, consegna su dati reali Randstad) vedi
 [`pipeline/README.md`](pipeline/README.md).
