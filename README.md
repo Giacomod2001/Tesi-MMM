@@ -77,15 +77,18 @@ Carichi i file, controlli la mappatura proposta in tabella, confermi: l'app
 salva i 4 CSV canonici (media, demand, seasonality, outcome) in una cartella
 sul Desktop, pronti per il fit.
 
-### Due usi della pipeline: dimostrazione vs produzione
-Lo stesso identico modello serve a due scopi. Cambia solo se i dati sono
-finti (per dimostrare che il metodo funziona) o veri (per decidere).
+### I due workflow: DIMOSTRAZIONE e PRODUZIONE
+Lo stesso identico modello serve a due scopi, con nomi distinti per non
+confonderli:
+- **DIMOSTRAZIONE** (per la tesi): dati finti + verifica che il modello
+  funzioni davvero.
+- **PRODUZIONE** (per Randstad): dati reali, output = budget consigliato.
 
 | | DIMOSTRAZIONE (tesi) | PRODUZIONE (Randstad) |
 |---|---|---|
 | 1. Dati | `generator.run`: dati sintetici **+ ground_truth.json** (la verità nota) | export reali di Randstad (niente generazione) |
 | 2. Ingestion | `app_ingestion.py` (o `ingestion.run`) | identica |
-| 3. Colab | [`colab_test.ipynb`](colab_test.ipynb): fit **+ parameter recovery** | [`colab_fit.ipynb`](colab_fit.ipynb): fit **+ allocazione budget** |
+| 3. Colab | [`colab_dimostrazione.ipynb`](colab_dimostrazione.ipynb): fit **+ parameter recovery** | [`colab_produzione.ipynb`](colab_produzione.ipynb): fit **+ allocazione budget** |
 | Risultato | il modello ritrova la verità → il metodo funziona | raccomandazione di budget |
 
 Il fit Meridian richiede una GPU, quindi gira su Colab in entrambi i casi.

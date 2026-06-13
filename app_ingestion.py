@@ -242,5 +242,7 @@ if res:
         if os.name == "nt" and st.button("Apri la cartella"):
             os.startfile(res["out_dir"])  # noqa: S606 — app locale desktop
     st.caption(f"(Copia anche in `{config.CANON_DIR}` per la pipeline.)")
-    st.info("Prossimo passo: carica questi 4 CSV su Colab per il fit del "
-            "modello (notebook fit-only).")
+    st.info("Prossimo passo (su Colab, serve GPU): per la PRODUZIONE usa "
+            "`colab_produzione.ipynb` (fit + allocazione budget); per la "
+            "DIMOSTRAZIONE `colab_dimostrazione.ipynb` (fit + recovery, "
+            "serve anche `ground_truth.json`).")
