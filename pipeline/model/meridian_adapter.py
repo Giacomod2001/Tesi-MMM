@@ -102,7 +102,8 @@ def platform_roas(facts: dict[str, pd.DataFrame]) -> dict[str, float]:
 def build_meridian(df: pd.DataFrame, channels: list[str],
                    roas_prior: dict[str, float] | None = None,
                    roi_prior_sigma: float = 0.7,
-                   knots_per_quarter: int = 1,
+                   roi_prior_discount: float = 1.3,
+                   knots_per_quarter: int = 3,
                    max_lag: int = 8):
     """InputData + ModelSpec + Meridian (non ancora campionato)."""
     import tensorflow_probability as tfp
@@ -126,9 +127,13 @@ def build_meridian(df: pd.DataFrame, channels: list[str],
                            media_channels=channels))
     data = builder.build()
 
-    # prior ROI: LogNormale centrata sul ROAS di piattaforma per canale
+    # prior ROI: LogNormale centrata sul ROAS di piattaforma per canale,
+    # scontato di un fattore di sovra-attribuzione: l'attribuzione di
+    # piattaforma (last-click) e' un tetto, non l'effetto incrementale vero.
     if roas_prior:
-        mu = np.log([max(roas_prior.get(c, 1.0), 0.05) for c in channels])
+        centers = [max(roas_prior.get(c, 1.0) / roi_prior_discount, 0.05)
+                   for c in channels]
+        mu = np.log(centers)
         roi_m = tfp.distributions.LogNormal(
             mu.astype(np.float32), np.float32(roi_prior_sigma),
             name=C.ROI_M)

@@ -25,6 +25,10 @@ def main() -> None:
     ap.add_argument("--keep", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--roi-sigma", type=float, default=0.7)
+    ap.add_argument("--roi-discount", type=float, default=1.3,
+                    help="sconto di attribuzione sul prior ROAS di piattaforma")
+    ap.add_argument("--knots-per-quarter", type=int, default=3,
+                    help="flessibilita' della baseline: nodi temporali per trimestre")
     ap.add_argument("--smoke", action="store_true",
                     help="fit minuscolo di verifica meccanica")
     args = ap.parse_args()
@@ -37,9 +41,13 @@ def main() -> None:
     print("Canali:", channels)
     print("ROAS di piattaforma (prior):",
           {k: round(v, 2) for k, v in roas.items()})
+    print(f"Sconto attribuzione prior: /{args.roi_discount} | "
+          f"nodi baseline per trimestre: {args.knots_per_quarter}")
 
     mmm = MA.build_meridian(df, channels, roas_prior=roas,
-                            roi_prior_sigma=args.roi_sigma)
+                            roi_prior_sigma=args.roi_sigma,
+                            roi_prior_discount=args.roi_discount,
+                            knots_per_quarter=args.knots_per_quarter)
     MA.fit(mmm, n_chains=args.chains, n_adapt=args.adapt,
            n_burnin=args.burnin, n_keep=args.keep, seed=args.seed)
 
