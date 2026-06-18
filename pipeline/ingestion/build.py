@@ -173,7 +173,7 @@ def _normalize_demand(df: pd.DataFrame, sm: mapping.SourceMap,
         long.columns = ["week", "region", "value"]
         long["region"] = mapping.normalize_region(long["region"])
         long["variable"] = var
-        report.append(f"{sm.file}: formato wide → {var}")
+        report.append(f"{sm.file}: formato wide -> {var}")
         return long
 
     rcol = sm.get("region")

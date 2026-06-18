@@ -15,7 +15,7 @@ from . import build, mapping
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Ingestion → fatti canonici")
+    ap = argparse.ArgumentParser(description="Ingestion -> fatti canonici")
     ap.add_argument("raw_dir", nargs="?", default=config.RAW_DIR)
     ap.add_argument("--plan", help="mapping_confirmed.json di un run precedente")
     ap.add_argument("--out", default=config.CANON_DIR)
