@@ -34,21 +34,87 @@ def _parse_kv(items: list[str] | None) -> dict[str, float]:
     return out
 
 
-def _write_excel(alloc, plan, monthly, camp) -> None:
-    """Scrive i quattro fogli dell'allocator nel workbook unico
-    (Canali / Settimane / Mesi / Campagne), con formato valuta."""
-    write_sheet("Canali", alloc.round(2),
-                {"budget_quarter": MONEY, "weekly_spend": MONEY,
-                 "hist_weekly_spend": MONEY, "expected_weekly_revenue": MONEY,
-                 "constraint_min": MONEY, "constraint_max": MONEY,
-                 "delta_pct": "0.0%", "marginal_roi": "0.00"})
+def _readable_canali(alloc, summary, hist, rev_per_conv) -> pd.DataFrame:
+    """Tabella canale in chiaro: spesa attuale/consigliata, variazione, e
+    candidature attese del canale (incrementali) ora vs con la raccomandazione."""
+    curves = Q.build_curves(summary, hist)
+    rows = []
+    for _, r in alloc.iterrows():
+        ch = r["channel"]; c = curves[ch]
+        def cand(x, c=c):
+            rev = c["beta"] * Q._steady_response(x, c["lam"], c["ec"],
+                                                 c["slope"], c["scale"])
+            return rev / max(rev_per_conv, 1e-9) * Q.WEEKS
+        now, reco = cand(r["hist_weekly_spend"]), cand(r["weekly_spend"])
+        rows.append({
+            "canale": ch,
+            "spesa attuale (EUR)": r["hist_weekly_spend"] * Q.WEEKS,
+            "spesa consigliata (EUR)": r["budget_quarter"],
+            "variazione spesa": r["weekly_spend"]
+                                / max(r["hist_weekly_spend"], 1e-9) - 1,
+            "candidature ora": now,
+            "candidature attese": reco,
+            "candidature in piu": reco - now,
+        })
+    df = pd.DataFrame(rows)
+    tot = {"canale": "TOTALE",
+           "spesa attuale (EUR)": df["spesa attuale (EUR)"].sum(),
+           "spesa consigliata (EUR)": df["spesa consigliata (EUR)"].sum(),
+           "variazione spesa": (df["spesa consigliata (EUR)"].sum()
+                                / max(df["spesa attuale (EUR)"].sum(), 1e-9) - 1),
+           "candidature ora": df["candidature ora"].sum(),
+           "candidature attese": df["candidature attese"].sum(),
+           "candidature in piu": df["candidature in piu"].sum()}
+    return pd.concat([df, pd.DataFrame([tot])], ignore_index=True)
+
+
+def _readable_campagne(camp, canali) -> pd.DataFrame:
+    """Campagne in chiaro: budget consigliato e candidature attese (quota
+    proposta x candidature attese del canale)."""
+    cand_ch = dict(zip(canali["canale"], canali["candidature attese"]))
+    return pd.DataFrame({
+        "canale": camp["channel"].values,
+        "campagna": camp["campaign"].values,
+        "spesa attuale (EUR)": camp["spend"].values,
+        "budget consigliato (EUR)": camp["budget_proposed"].values,
+        "quota attuale": camp["share_hist"].values,
+        "quota consigliata": camp["share_proposed"].values,
+        "candidature attese": camp["channel"].map(cand_ch).fillna(0).values
+                              * camp["share_proposed"].values,
+    })
+
+
+def _legend() -> pd.DataFrame:
+    rows = [
+        ("Canali", "spesa attuale (EUR)", "quanto spendi oggi sul canale, sul trimestre"),
+        ("Canali", "spesa consigliata (EUR)", "quanto dovresti spendere secondo il modello"),
+        ("Canali", "variazione spesa", "di quanto cambia la spesa, in percentuale"),
+        ("Canali", "candidature ora", "candidature portate da QUESTO canale con la spesa attuale (sono quelle in piu' rispetto a chi arriva da solo)"),
+        ("Canali", "candidature attese", "candidature portate dal canale con la spesa consigliata"),
+        ("Canali", "candidature in piu", "candidature aggiuntive grazie alla riallocazione; la riga TOTALE e' il guadagno netto a parita' di budget"),
+        ("Campagne", "budget consigliato (EUR)", "quanto spendere su ogni singola campagna"),
+        ("Campagne", "quota attuale / consigliata", "peso della campagna dentro il canale, prima e dopo"),
+        ("Campagne", "candidature attese", "candidature attese dalla campagna (stima per quota)"),
+        ("Settimane / Mesi", "spend", "come si distribuisce nel tempo la spesa consigliata"),
+        ("Grafici", "-", "i due grafici: budget per canale e per campagna"),
+        ("Recovery / Deconfound", "-", "verifiche di tesi su dati finti (quanto il modello azzecca la verita'); non servono per il budget"),
+    ]
+    return pd.DataFrame(rows, columns=["foglio", "voce", "cosa significa"])
+
+
+def _write_excel(canali, campagne, plan, monthly) -> None:
+    """Scrive i fogli dell'allocator nel workbook unico, in chiaro + legenda."""
+    write_sheet("Legenda", _legend())
+    write_sheet("Canali", canali.round(0),
+                {"spesa attuale (EUR)": MONEY, "spesa consigliata (EUR)": MONEY,
+                 "variazione spesa": "0.0%", "candidature ora": "#,##0",
+                 "candidature attese": "#,##0", "candidature in piu": "#,##0"})
+    write_sheet("Campagne", campagne.round(2),
+                {"spesa attuale (EUR)": MONEY, "budget consigliato (EUR)": MONEY,
+                 "quota attuale": "0.0%", "quota consigliata": "0.0%",
+                 "candidature attese": "#,##0"})
     write_sheet("Settimane", plan.round(2), {"spend": MONEY})
     write_sheet("Mesi", monthly.round(0), {"spend": MONEY})
-    write_sheet("Campagne", camp.round(3),
-                {"spend": MONEY, "budget_proposed": MONEY,
-                 "share_hist": "0.0%", "share_proposed": "0.0%",
-                 "platform_roas": "0.00", "roas_adjusted": "0.00",
-                 "k_channel": "0.00"})
 
 
 def _charts(alloc: pd.DataFrame, camp: pd.DataFrame, outdir: str) -> list[str]:
@@ -146,8 +212,17 @@ def main() -> None:
         alloc["hist_weekly_spend"] = alloc["channel"].map(hist)
     else:
         alloc = Q.optimize_from_summary(summary, hist, cons)
-    print("\n=== STAGE 1: allocazione per canale (quarter) ===")
-    print(alloc.round(2).to_string(index=False))
+
+    rev_per_conv = float(outcome["revenue"].sum()
+                         / max(outcome["conversions"].sum(), 1))
+    canali = _readable_canali(alloc, summary, hist, rev_per_conv)
+    disp = canali.copy()
+    disp["variazione spesa"] = disp["variazione spesa"].map(lambda v: f"{v:+.0%}")
+    for col in ("spesa attuale (EUR)", "spesa consigliata (EUR)", "candidature ora",
+                "candidature attese", "candidature in piu"):
+        disp[col] = disp[col].map(lambda v: f"{v:,.0f}")
+    print("\n=== ALLOCAZIONE PER CANALE ===")
+    print(disp.to_string(index=False))
 
     # ---------------- spaccato settimane/mesi
     plan = SC.build_schedule(alloc, summary, seas, args.quarter_start)
@@ -155,19 +230,23 @@ def main() -> None:
     print("\n=== SPACCATO MENSILE ===")
     print(monthly.round(0).to_string(index=False))
 
-    # ---------------- stage 2
-    rev_per_conv = float(outcome["revenue"].sum()
-                         / max(outcome["conversions"].sum(), 1))
+    # ---------------- stage 2: riparto per campagna
     roas = C2.campaign_roas(media, rev_per_conv)
     roi = {ch: e["roi"]["q50"] for ch, e in summary["channels"].items()}
     budget_ch = dict(zip(alloc["channel"], alloc["budget_quarter"]))
     camp = C2.allocate_campaigns(budget_ch, roas, roi,
                                  max_shift=args.max_shift)
-    print("\n=== STAGE 2: riparto per campagna ===")
-    print(camp.round(3).to_string(index=False))
+    campagne = _readable_campagne(camp, canali)
+    dispc = campagne.copy()
+    for col in ("quota attuale", "quota consigliata"):
+        dispc[col] = dispc[col].map(lambda v: f"{v:.0%}")
+    for col in ("spesa attuale (EUR)", "budget consigliato (EUR)", "candidature attese"):
+        dispc[col] = dispc[col].map(lambda v: f"{v:,.0f}")
+    print("\n=== RIPARTO PER CAMPAGNA ===")
+    print(dispc.to_string(index=False))
 
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
-    _write_excel(alloc, plan, monthly, camp)
+    _write_excel(canali, campagne, plan, monthly)
     print(f"\nFogli Canali/Settimane/Mesi/Campagne aggiornati in {WORKBOOK}")
     pngs = _charts(alloc, camp, config.OUTPUT_DIR)
     if pngs:
