@@ -164,6 +164,18 @@ def generate(seed: int = world.SEED, n_weeks: int = world.N_WEEKS) -> dict:
         "candidate_searches": demand["candidate_searches"].ravel(),
     })[config.DEMAND_COLS]
 
+    # serie "candidature dirette / traffico organico": osservazione RUMOROSA
+    # della domanda organica (baseline + effetto domanda), SENZA il media.
+    # Proxy del dato che l'azienda gia' traccia. rng dedicato (seed+7) per non
+    # perturbare il resto della generazione.
+    organic = baseline + ctrl_effect
+    direct_obs = np.maximum(
+        organic * np.random.default_rng(seed + 7).lognormal(0.0, 0.20, (n, R)),
+        0.0).round(0)
+    direct_df = pd.DataFrame({
+        "week": np.repeat(weeks, R), "region": np.tile(regions, n),
+        "candidature_dirette": direct_obs.ravel()})
+
     seasonality_df = pd.DataFrame({
         "week": weeks, "region": "*",
         "seasonal_index": np.round(seas, 4)})[config.SEASONALITY_COLS]
@@ -199,6 +211,7 @@ def generate(seed: int = world.SEED, n_weeks: int = world.N_WEEKS) -> dict:
 
     return {"media": media, "outcome": outcome, "demand": demand_df,
             "seasonality": seasonality_df, "campaigns": campaigns_df,
+            "direct": direct_df,
             "weeks": weeks, "hidden": hidden,
             "internals": {"camp_spend": camp_spend, "camp_impr": camp_impr,
                           "camp_clicks": camp_clicks, "camp_conv": camp_conv,

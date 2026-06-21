@@ -80,7 +80,7 @@ def build_frame(facts: dict[str, pd.DataFrame],
     df["time"] = pd.to_datetime(df["week"]).dt.strftime("%Y-%m-%d")
 
     ctrl = [c for c in ("client_requests", "candidate_searches",
-                        "seasonal_index") if c in df.columns]
+                        "seasonal_index", "direct_apps") if c in df.columns]
     df[ctrl] = df[ctrl].ffill().bfill()
     return df.sort_values(["time", "region"]).reset_index(drop=True), channels
 
@@ -115,7 +115,8 @@ def build_meridian(df: pd.DataFrame, channels: list[str],
     from meridian.model import spec as S
 
     ctrl = [c for c in ("client_requests", "candidate_searches",
-                        "seasonal_index", *extra_controls) if c in df.columns]
+                        "seasonal_index", "direct_apps", *extra_controls)
+            if c in df.columns]
     builder = (B.DataFrameInputDataBuilder(kpi_type="non_revenue",
                                            default_geo_column="region")
                .with_kpi(df, kpi_col="conversions")

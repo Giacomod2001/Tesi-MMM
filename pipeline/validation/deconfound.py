@@ -40,54 +40,39 @@ def _ingest_auto() -> None:
                      interactive=False, tables=tables)
 
 
-def _direct_series(panel: dict, seed: int) -> pd.DataFrame:
-    """Serie 'candidature dirette': osservazione rumorosa della domanda
-    organica vera (baseline + effetto domanda), senza la parte media.
-    Proxy realistico — imperfetto — del traffico diretto/organico."""
-    organic = panel["internals"]["organic"]            # (settimane, regioni)
-    da = pd.DataFrame(organic, index=pd.to_datetime(panel["weeks"]),
-                      columns=config.REGION_LIST)
-    da = da.stack().rename("direct_apps").reset_index()
-    da.columns = ["week", "region", "direct_apps"]
-    rng = np.random.default_rng(seed + 999)
-    da["direct_apps"] = (da["direct_apps"]
-                         * rng.lognormal(0.0, 0.20, len(da))).round(0)
-    return da
-
-
-def _fit_recovery(df, channels, facts, *, extra_controls, seed) -> pd.DataFrame:
+def _fit_recovery(df, channels, facts, *, seed) -> pd.DataFrame:
+    """Fit + recovery ROI. I controlli (incl. direct_apps se presente in df)
+    li decide build_meridian dalle colonne disponibili."""
     roas = MA.platform_roas(facts)
     mmm = MA.build_meridian(df, channels, roas_prior=roas,
                             roi_prior_sigma=FIT["roi_sigma"],
                             roi_prior_discount=FIT["roi_discount"],
-                            knots_per_quarter=FIT["knots"],
-                            extra_controls=extra_controls)
+                            knots_per_quarter=FIT["knots"])
     MA.fit(mmm, n_chains=FIT["chains"], n_adapt=FIT["adapt"],
            n_burnin=FIT["burnin"], n_keep=FIT["keep"], seed=seed)
     summary = MA.summarize(mmm, channels)
     MA.save_summary(summary)
     fit, truth = rec.load()
-    media = pd.read_csv(os.path.join(config.CANON_DIR, "media.csv"),
-                        parse_dates=["week"])
-    hist = (media.groupby("channel")["spend"].sum()
-            / media["week"].nunique()).to_dict()
     return rec.roi_recovery(fit, truth)
 
 
 def run_seed(seed: int) -> pd.DataFrame:
-    panel = gen_run.main(seed=seed)        # scrive i file + ritorna il panel
+    """gen -> ingestion (l'app trasforma anche 'candidature dirette' nel
+    controllo direct_apps) -> 2 fit, SENZA e CON il controllo -> confronto."""
+    gen_run.main(seed=seed)                 # scrive i file (incl. candidature_dirette.csv)
     _ingest_auto()
     facts = MA.load_facts()
     df, channels = MA.build_frame(facts)
+    if "direct_apps" not in df.columns:
+        raise RuntimeError("controllo 'direct_apps' assente dopo l'ingestion: "
+                           "verificare la mappatura del file candidature dirette")
 
     print(f"\n--- seed {seed}: fit SENZA controllo diretto ---")
-    base = _fit_recovery(df, channels, facts, extra_controls=(), seed=seed)
+    base = _fit_recovery(df.drop(columns=["direct_apps"]),
+                         channels, facts, seed=seed)
 
     print(f"\n--- seed {seed}: fit CON controllo diretto ---")
-    df2 = df.merge(_direct_series(panel, seed), on=["week", "region"], how="left")
-    df2["direct_apps"] = df2["direct_apps"].ffill().bfill()
-    withd = _fit_recovery(df2, channels, facts,
-                          extra_controls=("direct_apps",), seed=seed)
+    withd = _fit_recovery(df, channels, facts, seed=seed)
 
     out = base[["channel", "roi_true", "roi_q50", "rel_error", "covered_90"]].rename(
         columns={"roi_q50": "roi_senza", "rel_error": "err_senza",

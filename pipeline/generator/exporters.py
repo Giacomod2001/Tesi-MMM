@@ -195,6 +195,13 @@ def write_demand_and_seasonality(panel: dict, dir_raw: str) -> None:
     se.columns = ["settimana", "indice_stagionale"]
     se.to_csv(os.path.join(dir_raw, "stagionalita.csv"), index=False)
 
+    # candidature dirette / traffico organico: CSV long (proxy domanda organica
+    # che l'azienda gia' traccia). L'ingestion lo mappa sul controllo direct_apps.
+    di = panel["direct"][["week", "region", "candidature_dirette"]].copy()
+    di["week"] = di["week"].map(_ddmmyyyy)
+    di.columns = ["Settimana", "Regione", "Candidature dirette"]
+    di.to_csv(os.path.join(dir_raw, "candidature_dirette.csv"), index=False)
+
 
 def write_crm(individuals: pd.DataFrame, path: str) -> None:
     individuals.to_csv(path, index=False, sep=";", decimal=",",

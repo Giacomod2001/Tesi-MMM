@@ -146,6 +146,10 @@ def build_media(plans: list[mapping.SourceMap],
 
 # --------------------------------------------------------------- fatti controllo
 def _demand_variable_from_filename(fname: str) -> str:
+    # 'dirett' PRIMA di 'candidat': "candidature dirette" e' traffico diretto,
+    # non ricerche candidati.
+    if re.search(r"(?i)dirett|direct|organic|traffico", fname):
+        return "direct_apps"
     if re.search(r"(?i)richiest|client|fulfillment|ordini", fname):
         return "client_requests"
     if re.search(r"(?i)ricerch|search|candidat", fname):
@@ -206,7 +210,10 @@ def build_demand(plans, tables, report) -> pd.DataFrame:
     for c in ("client_requests", "candidate_searches"):
         if c not in wide.columns:
             wide[c] = np.nan
-    return wide[config.DEMAND_COLS]
+    # direct_apps (candidature dirette / traffico organico) e' un controllo
+    # OPZIONALE: se presente lo si porta avanti, altrimenti si ignora.
+    extra = [c for c in ("direct_apps",) if c in wide.columns]
+    return wide[list(config.DEMAND_COLS) + extra]
 
 
 def build_seasonality(plans, tables, report) -> pd.DataFrame:
