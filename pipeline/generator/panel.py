@@ -202,4 +202,5 @@ def generate(seed: int = world.SEED, n_weeks: int = world.N_WEEKS) -> dict:
             "weeks": weeks, "hidden": hidden,
             "internals": {"camp_spend": camp_spend, "camp_impr": camp_impr,
                           "camp_clicks": camp_clicks, "camp_conv": camp_conv,
-                          "conv": conv, "revenue": revenue}}
+                          "conv": conv, "revenue": revenue,
+                          "organic": baseline + ctrl_effect}}

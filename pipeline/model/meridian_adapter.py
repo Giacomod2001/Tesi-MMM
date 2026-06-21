@@ -104,6 +104,7 @@ def build_meridian(df: pd.DataFrame, channels: list[str],
                    roi_prior_sigma: float = 0.7,
                    roi_prior_discount: float = 1.3,
                    knots_per_quarter: int = 3,
+                   extra_controls: tuple[str, ...] = (),
                    max_lag: int = 8):
     """InputData + ModelSpec + Meridian (non ancora campionato)."""
     import tensorflow_probability as tfp
@@ -114,7 +115,7 @@ def build_meridian(df: pd.DataFrame, channels: list[str],
     from meridian.model import spec as S
 
     ctrl = [c for c in ("client_requests", "candidate_searches",
-                        "seasonal_index") if c in df.columns]
+                        "seasonal_index", *extra_controls) if c in df.columns]
     builder = (B.DataFrameInputDataBuilder(kpi_type="non_revenue",
                                            default_geo_column="region")
                .with_kpi(df, kpi_col="conversions")
