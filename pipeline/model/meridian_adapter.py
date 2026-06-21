@@ -186,12 +186,24 @@ def summarize(mmm, channels: list[str]) -> dict:
                 entry[key] = stats(post(par)[..., i])
         out["channels"][ch] = entry
 
-    # diagnostica di convergenza
+    # diagnostica di convergenza: max R-hat sui SOLI valori finiti.
+    # Alcune variabili deterministiche hanno varianza intra-catena nulla →
+    # R-hat indefinito (NaN): vanno ignorate, non devono inquinare il max
+    # (e np.nanmax su una slice tutta-NaN emette warning fuorvianti).
     try:
+        import warnings
         import arviz as az
-        rh = az.rhat(az_data.posterior)
-        worst = float(max(np.nanmax(np.asarray(rh[v])) for v in rh.data_vars))
-        out["diagnostics"] = {"max_rhat": worst}
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            rh = az.rhat(az_data.posterior)
+        vals = []
+        for v in rh.data_vars:
+            arr = np.asarray(rh[v], dtype=float)
+            arr = arr[np.isfinite(arr)]
+            if arr.size:
+                vals.append(float(arr.max()))
+        out["diagnostics"] = {"max_rhat": max(vals) if vals else None,
+                              "rhat_params": len(vals)}
     except Exception as exc:                         # pragma: no cover
         out["diagnostics"] = {"rhat_error": str(exc)}
     return out
