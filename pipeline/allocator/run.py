@@ -23,7 +23,7 @@ from .. import config
 from . import campaigns as C2
 from . import quarter as Q
 from . import schedule as SC
-from results_xlsx import write_sheet, WORKBOOK, MONEY
+from results_xlsx import write_sheet, add_images, WORKBOOK, MONEY
 
 
 def _parse_kv(items: list[str] | None) -> dict[str, float]:
@@ -49,6 +49,59 @@ def _write_excel(alloc, plan, monthly, camp) -> None:
                  "share_hist": "0.0%", "share_proposed": "0.0%",
                  "platform_roas": "0.00", "roas_adjusted": "0.00",
                  "k_channel": "0.00"})
+
+
+def _charts(alloc: pd.DataFrame, camp: pd.DataFrame, outdir: str) -> list[str]:
+    """Due grafici PNG: budget per canale (attuale vs consigliato) e budget
+    consigliato per campagna (colore per canale)."""
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Patch
+        import numpy as np
+    except Exception as exc:                          # pragma: no cover
+        print("matplotlib non disponibile, salto i grafici:", exc)
+        return []
+    PALETTE = {"google": "#E07A5F", "indeed": "#4C9F70",
+               "linkedin": "#3D5A80", "meta": "#E8B04B"}
+    paths = []
+
+    # 1) canale: attuale vs consigliato (budget trimestre)
+    a = alloc.sort_values("budget_quarter", ascending=False)
+    chans = a["channel"].tolist()
+    attuale = (a["hist_weekly_spend"] * Q.WEEKS).to_numpy() / 1000
+    consigliato = a["budget_quarter"].to_numpy() / 1000
+    x = np.arange(len(chans)); w = 0.38
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    ax.bar(x - w / 2, attuale, w, label="attuale", color="#B0B7C3")
+    ax.bar(x + w / 2, consigliato, w, label="consigliato", color="#3D5A80")
+    for i, d in enumerate(a["delta_pct"].to_numpy()):
+        ax.text(x[i] + w / 2, consigliato[i], f"{d:+.0%}",
+                ha="center", va="bottom", fontsize=9)
+    ax.set_xticks(x); ax.set_xticklabels(chans)
+    ax.set_ylabel("budget trimestre (k€)"); ax.legend()
+    ax.set_title("Budget per canale: attuale vs consigliato")
+    p = os.path.join(outdir, "alloc_canali.png")
+    fig.tight_layout(); fig.savefig(p, dpi=130); plt.close(fig); paths.append(p)
+
+    # 2) campagna: budget consigliato, colore per canale
+    c = camp.sort_values("budget_proposed", ascending=True)
+    cols = [PALETTE.get(ch, "#888888") for ch in c["channel"]]
+    labels = [f"{ch}: {cp}" for ch, cp in zip(c["channel"], c["campaign"])]
+    y = np.arange(len(c))
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.barh(y, c["budget_proposed"].to_numpy() / 1000, color=cols)
+    for i, v in enumerate(c["budget_proposed"].to_numpy()):
+        ax.text(v / 1000, i, f" {v/1000:.0f}k", va="center", fontsize=8)
+    ax.set_yticks(y); ax.set_yticklabels(labels, fontsize=8)
+    ax.set_xlabel("budget consigliato (k€)")
+    ax.set_title("Budget consigliato per campagna")
+    used = [k for k in PALETTE if k in set(c["channel"])]
+    ax.legend(handles=[Patch(color=PALETTE[k], label=k) for k in used], fontsize=8)
+    p = os.path.join(outdir, "alloc_campagne.png")
+    fig.tight_layout(); fig.savefig(p, dpi=130); plt.close(fig); paths.append(p)
+    return paths
 
 
 def main() -> None:
@@ -116,6 +169,14 @@ def main() -> None:
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
     _write_excel(alloc, plan, monthly, camp)
     print(f"\nFogli Canali/Settimane/Mesi/Campagne aggiornati in {WORKBOOK}")
+    pngs = _charts(alloc, camp, config.OUTPUT_DIR)
+    if pngs:
+        try:
+            add_images("Grafici", pngs)
+            print("Grafici nel foglio 'Grafici' dell'Excel + PNG:",
+                  [os.path.basename(p) for p in pngs])
+        except Exception as exc:                      # pragma: no cover
+            print("Grafici nell'Excel saltati:", exc)
     print("NB: è una raccomandazione — la validazione finale spetta al "
           "manager (human-in-the-middle).")
 

@@ -62,3 +62,23 @@ def write_sheet(sheet: str, df: pd.DataFrame,
                 for i in range(2, len(out) + 2):
                     ws.cell(i, j).number_format = fmt
     return path
+
+
+def add_images(sheet: str, image_paths: list[str], path: str = WORKBOOK) -> str:
+    """Inserisce immagini PNG in un foglio del workbook (impilate in verticale),
+    creando o rimpiazzando il foglio. Richiede Pillow. Da chiamare DOPO che il
+    workbook esiste (write_sheet)."""
+    from openpyxl import load_workbook
+    from openpyxl.drawing.image import Image as XLImage
+
+    wb = load_workbook(path)
+    if sheet in wb.sheetnames:
+        del wb[sheet]
+    ws = wb.create_sheet(sheet)
+    row = 1
+    for p in image_paths:
+        if os.path.exists(p):
+            ws.add_image(XLImage(p), f"A{row}")
+            row += 26                      # spazio verticale per l'immagine
+    wb.save(path)
+    return path
