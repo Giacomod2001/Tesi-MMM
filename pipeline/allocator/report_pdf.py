@@ -61,12 +61,12 @@ def _kpis(fig, y, items):
                 fontsize=15, color=NAVY, fontweight="bold")
 
 
-def _table(fig, rect, headers, rows, sat_col=None, dpct_cols=(), cpa_col=None):
+def _table(fig, rect, headers, rows, sat_col=None, dpct_cols=(), cpa_col=None, w0=0.20):
     ax = fig.add_axes(rect); ax.axis("off")
     tb = ax.table(cellText=rows, colLabels=headers, cellLoc="center",
                   bbox=[0, 0, 1, 1])
     tb.auto_set_font_size(False); tb.set_fontsize(8)
-    nc = len(headers); w0 = 0.20; wo = (1 - w0) / (nc - 1)
+    nc = len(headers); wo = (1 - w0) / (nc - 1)
     for (r, c), cell in tb.get_celld().items():
         cell.set_width(w0 if c == 0 else wo)
         cell.set_edgecolor("#D9D9D9")
@@ -201,7 +201,7 @@ def _page_mensile_storico(pdf, tot_bud, tot_ca, seas, media):
              f"{r['clicks']/nw:,.0f}", _eur(r["spend"] / max(r["conv"], 1))]
             for _, r in g.iterrows()]
     _band(fig, [0.0, 0.43, 1.0, 0.04], "Dettaglio Storico Canali", fc=BLUE, size=11)
-    _table(fig, [0.12, 0.04, 0.76, 0.36], headers, rows)
+    _table(fig, [0.05, 0.04, 0.90, 0.36], headers, rows, w0=0.42)
     pdf.savefig(fig); plt.close(fig)
 
 
