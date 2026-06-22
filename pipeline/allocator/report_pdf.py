@@ -10,6 +10,8 @@ Costruito con matplotlib (PdfPages): nessun rischio di grafici sovrapposti.
 """
 from __future__ import annotations
 
+import os
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -250,33 +252,58 @@ def _page_mixbar(pdf, page_title, names, mix):
     pdf.savefig(fig); plt.close(fig)
 
 
-def build_pdf(canali, campagne, summary, media, seas, rev_per_conv, path) -> str:
+def _render(sink, canali, campagne, summary, media, seas):
+    """Disegna tutte le pagine su `sink` (un oggetto con .savefig(fig)):
+    PdfPages per il PDF, o un sink che salva PNG per l'anteprima."""
     nw = media["week"].nunique()
     hist = (media.groupby("channel")["spend"].sum() / nw).to_dict()
     curves = Q.build_curves(summary, hist)
     ch = _xl._channel_table(canali, curves)
     cp = _xl._campaign_table(canali, campagne, curves)
+    _page_alloc(sink, "MMM BUDGET OPTIMIZER — Cruscotto per CANALE", ch, charts=False)
+    chn = list(ch["Canale"])
+    _page_compare(sink, "Canali — Confronto Spesa", "Spesa: storica vs consigliata (k€)",
+                  chn, [v / 1000 for v in ch["Spesa Storica"]],
+                  [v / 1000 for v in ch["Budget Consigliato"]],
+                  "storica", "consigliata", BLUE_S, "k€")
+    _page_mixbar(sink, "Canali — Mix Budget", chn, list(ch["Mix %"]))
+    _page_alloc(sink, "MMM BUDGET OPTIMIZER — Cruscotto per CAMPAGNA", cp, charts=False)
+    cpn = list(cp["Campagna"])
+    _page_compare(sink, "Campagne — Confronto Spesa", "Spesa: storica vs consigliata (k€)",
+                  cpn, [v / 1000 for v in cp["Spesa Storica"]],
+                  [v / 1000 for v in cp["Budget Consigliato"]],
+                  "storica", "consigliata", BLUE_S, "k€")
+    _page_mixbar(sink, "Campagne — Mix Budget", cpn, list(cp["Mix %"]))
+    _page_compare(sink, "Campagne — CPA", "CPA: storico vs previsto (€)",
+                  cpn, list(cp["CPA Storico"]), list(cp["CPA Previsto"]),
+                  "storico", "previsto", BLUE_S, "€")
+    _page_compare(sink, "Campagne — Conversioni", "Conversioni: storiche vs attese",
+                  cpn, list(cp["Conv Storiche"]), list(cp["Conv Attese"]),
+                  "storiche", "attese", GREEN_S, "conversioni")
+    _page_mensile_storico(sink, ch["Budget Consigliato"].sum(),
+                          ch["Conv Attese"].sum(), seas, media)
+
+
+def build_pdf(canali, campagne, summary, media, seas, rev_per_conv, path) -> str:
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with PdfPages(path) as pdf:
-        _page_alloc(pdf, "MMM BUDGET OPTIMIZER — Cruscotto per CANALE", ch, charts=False)
-        chn = list(ch["Canale"])
-        _page_compare(pdf, "Canali — Confronto Spesa", "Spesa: storica vs consigliata (k€)",
-                      chn, [v / 1000 for v in ch["Spesa Storica"]],
-                      [v / 1000 for v in ch["Budget Consigliato"]],
-                      "storica", "consigliata", BLUE_S, "k€")
-        _page_mixbar(pdf, "Canali — Mix Budget", chn, list(ch["Mix %"]))
-        _page_alloc(pdf, "MMM BUDGET OPTIMIZER — Cruscotto per CAMPAGNA", cp, charts=False)
-        cpn = list(cp["Campagna"])
-        _page_compare(pdf, "Campagne — Confronto Spesa", "Spesa: storica vs consigliata (k€)",
-                      cpn, [v / 1000 for v in cp["Spesa Storica"]],
-                      [v / 1000 for v in cp["Budget Consigliato"]],
-                      "storica", "consigliata", BLUE_S, "k€")
-        _page_mixbar(pdf, "Campagne — Mix Budget", cpn, list(cp["Mix %"]))
-        _page_compare(pdf, "Campagne — CPA", "CPA: storico vs previsto (€)",
-                      cpn, list(cp["CPA Storico"]), list(cp["CPA Previsto"]),
-                      "storico", "previsto", BLUE_S, "€")
-        _page_compare(pdf, "Campagne — Conversioni", "Conversioni: storiche vs attese",
-                      cpn, list(cp["Conv Storiche"]), list(cp["Conv Attese"]),
-                      "storiche", "attese", GREEN_S, "conversioni")
-        _page_mensile_storico(pdf, ch["Budget Consigliato"].sum(),
-                              ch["Conv Attese"].sum(), seas, media)
+        _render(pdf, canali, campagne, summary, media, seas)
     return path
+
+
+def build_pngs(canali, campagne, summary, media, seas, out_dir) -> list:
+    """Salva ogni pagina come PNG (anteprima inline senza poppler/pdf2image)."""
+    os.makedirs(out_dir, exist_ok=True)
+
+    class _Sink:
+        def __init__(self):
+            self.i, self.paths = 0, []
+
+        def savefig(self, fig):
+            p = os.path.join(out_dir, f"pagina_{self.i:02d}.png")
+            fig.savefig(p, dpi=110)
+            self.paths.append(p); self.i += 1
+
+    sink = _Sink()
+    _render(sink, canali, campagne, summary, media, seas)
+    return sink.paths
