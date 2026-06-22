@@ -114,7 +114,7 @@ def _bar_compare(fig, rect, title, names, a, b, la, lb, colb):
         ax.spines[s].set_visible(False)
 
 
-def _page_alloc(pdf, title, tab):
+def _page_alloc(pdf, title, tab, charts=True):
     fig = plt.figure(figsize=(11.69, 8.27))
     _band(fig, [0.0, 0.94, 1.0, 0.06], title)
     tot_b = tab["Budget Consigliato"].sum(); tot_ca = tab["Conv Attese"].sum()
@@ -123,31 +123,41 @@ def _page_alloc(pdf, title, tab):
                        ("CONV. ATTESE/SETT.", f"{tot_ca/Q.WEEKS:,.0f}"),
                        ("CPA MEDIO PREV.", _eur(tot_b / max(tot_ca, 1)))])
     headers, rows = _alloc_rows(tab)
-    th = 0.30 if len(rows) <= 5 else 0.40
+    th = 0.62 if not charts else (0.30 if len(rows) <= 5 else 0.40)
     _table(fig, [0.03, 0.80 - th, 0.94, th], headers, rows,
            sat_col=11, dpct_cols=(4, 7, 10), cpa_col=10)
-    names = list(tab[tab.columns[0]])
-    _bar_compare(fig, [0.06, 0.06, 0.40, 0.33 - (th - 0.30)], "Confronto Spesa (k€)",
-                 names, [v / 1000 for v in tab["Spesa Storica"]],
-                 [v / 1000 for v in tab["Budget Consigliato"]],
-                 "storica", "consigliata", BLUE_S)
-    cw = 0.34 - (th - 0.30)
-    if len(names) <= 6:
-        ax = fig.add_axes([0.56, 0.05, 0.36, cw])
+    if charts:
+        names = list(tab[tab.columns[0]])
+        _bar_compare(fig, [0.06, 0.05, 0.40, 0.31], "Confronto Spesa (k€)",
+                     names, [v / 1000 for v in tab["Spesa Storica"]],
+                     [v / 1000 for v in tab["Budget Consigliato"]],
+                     "storica", "consigliata", BLUE_S)
+        ax = fig.add_axes([0.56, 0.05, 0.36, 0.31])
         ax.pie(tab["Budget Consigliato"], labels=names, autopct="%1.0f%%",
                startangle=90, counterclock=False,
-               textprops={"fontsize": 8}, wedgeprops={"width": 0.45})
-    else:
-        ax = fig.add_axes([0.60, 0.05, 0.36, cw])
-        y = np.arange(len(names))[::-1]; vals = list(tab["Mix %"])
-        ax.barh(y, [v * 100 for v in vals], color=BLUE_S)
-        for yi, v in zip(y, vals):
-            ax.text(v * 100, yi, f" {v:.0%}", va="center", fontsize=7)
-        ax.set_yticks(y); ax.set_yticklabels(names, fontsize=7)
-        ax.set_xlabel("% del budget", fontsize=7); ax.tick_params(labelsize=7)
-        for sp in ("top", "right"):
-            ax.spines[sp].set_visible(False)
-    ax.set_title("Mix Budget", fontsize=10, fontweight="bold", color=NAVY)
+               textprops={"fontsize": 9}, wedgeprops={"width": 0.45})
+        ax.set_title("Mix Budget", fontsize=11, fontweight="bold", color=NAVY)
+    pdf.savefig(fig); plt.close(fig)
+
+
+def _page_budget_charts(pdf, title, tab):
+    fig = plt.figure(figsize=(11.69, 8.27))
+    _band(fig, [0.0, 0.94, 1.0, 0.06], title)
+    names = list(tab["Campagna"])
+    _bar_compare(fig, [0.07, 0.10, 0.40, 0.78], "Confronto Spesa (k€)", names,
+                 [v / 1000 for v in tab["Spesa Storica"]],
+                 [v / 1000 for v in tab["Budget Consigliato"]],
+                 "storica", "consigliata", BLUE_S)
+    ax = fig.add_axes([0.60, 0.10, 0.36, 0.78])
+    y = np.arange(len(names))[::-1]; vals = list(tab["Mix %"])
+    ax.barh(y, [v * 100 for v in vals], color=BLUE_S)
+    for yi, v in zip(y, vals):
+        ax.text(v * 100, yi, f" {v:.0%}", va="center", fontsize=8)
+    ax.set_yticks(y); ax.set_yticklabels(names, fontsize=8)
+    ax.set_xlabel("% del budget", fontsize=8); ax.tick_params(labelsize=8)
+    ax.set_title("Mix Budget", fontsize=11, fontweight="bold", color=NAVY)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
     pdf.savefig(fig); plt.close(fig)
 
 
@@ -213,7 +223,8 @@ def build_pdf(canali, campagne, summary, media, seas, rev_per_conv, path) -> str
     cp = _xl._campaign_table(canali, campagne, curves)
     with PdfPages(path) as pdf:
         _page_alloc(pdf, "MMM BUDGET OPTIMIZER — Cruscotto per CANALE", ch)
-        _page_alloc(pdf, "MMM BUDGET OPTIMIZER — Cruscotto per CAMPAGNA", cp)
+        _page_alloc(pdf, "MMM BUDGET OPTIMIZER — Cruscotto per CAMPAGNA", cp, charts=False)
+        _page_budget_charts(pdf, "Cruscotto per CAMPAGNA — Budget e Mix", cp)
         _page_campagne_charts(pdf, cp)
         _page_mensile_storico(pdf, ch["Budget Consigliato"].sum(),
                               ch["Conv Attese"].sum(), seas, media)
