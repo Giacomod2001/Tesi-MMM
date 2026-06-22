@@ -66,7 +66,9 @@ def _table(fig, rect, headers, rows, sat_col=None, dpct_cols=(), cpa_col=None):
     tb = ax.table(cellText=rows, colLabels=headers, cellLoc="center",
                   bbox=[0, 0, 1, 1])
     tb.auto_set_font_size(False); tb.set_fontsize(8)
+    nc = len(headers); w0 = 0.20; wo = (1 - w0) / (nc - 1)
     for (r, c), cell in tb.get_celld().items():
+        cell.set_width(w0 if c == 0 else wo)
         cell.set_edgecolor("#D9D9D9")
         if r == 0:
             cell.set_facecolor(BLUE); cell.set_text_props(color="white", fontweight="bold")
@@ -129,9 +131,22 @@ def _page_alloc(pdf, title, tab):
                  names, [v / 1000 for v in tab["Spesa Storica"]],
                  [v / 1000 for v in tab["Budget Consigliato"]],
                  "storica", "consigliata", BLUE_S)
-    ax = fig.add_axes([0.56, 0.05, 0.36, 0.34 - (th - 0.30)])
-    ax.pie(tab["Budget Consigliato"], labels=names, autopct="%1.0f%%",
-           textprops={"fontsize": 7.5}, wedgeprops={"width": 0.45})
+    cw = 0.34 - (th - 0.30)
+    if len(names) <= 6:
+        ax = fig.add_axes([0.56, 0.05, 0.36, cw])
+        ax.pie(tab["Budget Consigliato"], labels=names, autopct="%1.0f%%",
+               startangle=90, counterclock=False,
+               textprops={"fontsize": 8}, wedgeprops={"width": 0.45})
+    else:
+        ax = fig.add_axes([0.60, 0.05, 0.36, cw])
+        y = np.arange(len(names))[::-1]; vals = list(tab["Mix %"])
+        ax.barh(y, [v * 100 for v in vals], color=BLUE_S)
+        for yi, v in zip(y, vals):
+            ax.text(v * 100, yi, f" {v:.0%}", va="center", fontsize=7)
+        ax.set_yticks(y); ax.set_yticklabels(names, fontsize=7)
+        ax.set_xlabel("% del budget", fontsize=7); ax.tick_params(labelsize=7)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
     ax.set_title("Mix Budget", fontsize=10, fontweight="bold", color=NAVY)
     pdf.savefig(fig); plt.close(fig)
 
