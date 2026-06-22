@@ -143,7 +143,7 @@ def _page_alloc(pdf, title, tab, charts=True):
 def _page_budget_charts(pdf, title, tab):
     fig = plt.figure(figsize=(11.69, 8.27))
     _band(fig, [0.0, 0.94, 1.0, 0.06], title)
-    names = list(tab["Campagna"])
+    names = list(tab[tab.columns[0]])
     _bar_compare(fig, [0.07, 0.10, 0.40, 0.78], "Confronto Spesa (k€)", names,
                  [v / 1000 for v in tab["Spesa Storica"]],
                  [v / 1000 for v in tab["Budget Consigliato"]],
@@ -222,7 +222,8 @@ def build_pdf(canali, campagne, summary, media, seas, rev_per_conv, path) -> str
     ch = _xl._channel_table(canali, curves)
     cp = _xl._campaign_table(canali, campagne, curves)
     with PdfPages(path) as pdf:
-        _page_alloc(pdf, "MMM BUDGET OPTIMIZER — Cruscotto per CANALE", ch)
+        _page_alloc(pdf, "MMM BUDGET OPTIMIZER — Cruscotto per CANALE", ch, charts=False)
+        _page_budget_charts(pdf, "Cruscotto per CANALE — Budget e Mix", ch)
         _page_alloc(pdf, "MMM BUDGET OPTIMIZER — Cruscotto per CAMPAGNA", cp, charts=False)
         _page_budget_charts(pdf, "Cruscotto per CAMPAGNA — Budget e Mix", cp)
         _page_campagne_charts(pdf, cp)
