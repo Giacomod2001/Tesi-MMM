@@ -23,6 +23,7 @@ from .. import config
 from . import campaigns as C2
 from . import quarter as Q
 from . import schedule as SC
+from . import dashboard as DB
 from results_xlsx import write_sheet, add_images, WORKBOOK, MONEY
 
 
@@ -256,6 +257,13 @@ def main() -> None:
                   [os.path.basename(p) for p in pngs])
         except Exception as exc:                      # pragma: no cover
             print("Grafici nell'Excel saltati:", exc)
+    try:
+        dash = DB.build_dashboard(
+            canali, campagne, summary, media, seas, rev_per_conv,
+            os.path.join(config.OUTPUT_DIR, "dashboard.xlsx"))
+        print(f"Cruscotto direzionale (dashboard.xlsx): {dash}")
+    except Exception as exc:                          # pragma: no cover
+        print("Cruscotto dashboard.xlsx saltato:", exc)
     print("NB: è una raccomandazione — la validazione finale spetta al "
           "manager (human-in-the-middle).")
 
